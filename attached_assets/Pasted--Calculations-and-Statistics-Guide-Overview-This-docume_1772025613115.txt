@@ -1,0 +1,430 @@
+# Calculations and Statistics Guide
+
+## Overview
+This document contains all calculation logic and statistics functionality used in the application, including row-based filtering calculations and module card statistics.
+
+---
+
+## PART 1: MODULE CARD STATISTICS (header of each module)
+
+### Purpose
+Each module card on the header of the specific module table displays two key statistics about that module's data.
+
+### Card Statistics Structure
+```javascript
+// Each module card displays:
+{
+  total: number,      // Lifetime total for the module
+  today: number       // Count/total added today
+}
+```
+
+### Module Card Calculations
+
+#### 1. Oil Sales (Vente Huiles)
+**Data Source:** localStorage['oilsData']
+
+**Total Calculation:**
+- Sum of all `huile_10w40` + `huile_20w50` quantities across all records
+```javascript
+total: oilsData.reduce((sum, item) => sum + (item.huile_10w40 || 0) + (item.huile_20w50 || 0), 0)
+```
+
+**Today Calculation:**
+- Sum of `huile_10w40` + `huile_20w50` for records where `date === todayString`
+```javascript
+today: oilsData
+  .filter(item => item.date === todayString)
+  .reduce((sum, item) => sum + (item.huile_10w40 || 0) + (item.huile_20w50 || 0), 0)
+```
+
+#### 2. Saddles (Cache Selle)
+**Data Source:** localStorage['saddlesData']
+
+**Total Calculation:**
+- Count of all records
+```javascript
+total: saddlesData.length
+```
+
+**Today Calculation:**
+- Count of records where `date === todayString`
+```javascript
+today: saddlesData.filter(item => item.date === todayString).length
+```
+
+#### 3. Deferred Sales (Vente Différée)
+**Data Source:** localStorage['deferredData']
+
+**Total Calculation:**
+- Count of all records
+```javascript
+total: deferredData.length
+```
+
+**Today Calculation:**
+- Count of records where `date === todayString`
+```javascript
+today: deferredData.filter(item => item.date === todayString).length
+```
+
+#### 4. Helmets (Suivi Casques)
+**Data Source:** localStorage['helmetsData']
+
+**Total Calculation:**
+- Count of all records
+```javascript
+total: helmetsData.length
+```
+
+**Today Calculation:**
+- Count of records where `date === todayString`
+```javascript
+today: helmetsData.filter(item => item.date === todayString).length
+```
+
+#### 5. Orders (Suivi Commande)
+**Data Source:** localStorage['ordersData']
+
+**Total Calculation:**
+- Count of all records
+```javascript
+total: ordersData.length
+```
+
+**Today Calculation:**
+- Count of records where `date === todayString`
+```javascript
+today: ordersData.filter(item => item.date === todayString).length
+```
+
+#### 6. Reservations (Suivi Réservation)
+**Data Source:** localStorage['reservationsData']
+
+**Total Calculation:**
+- Count of all records
+```javascript
+total: reservationsData.length
+```
+
+**Today Calculation:**
+- Count of records where `date === todayString`
+```javascript
+today: reservationsData.filter(item => item.date === todayString).length
+```
+
+### Card Rendering Logic
+```javascript
+// Get today's date (calculated on client-side only to avoid hydration mismatch)
+const today = new Date();
+const todayString = today.toISOString().split('T')[0]; // Format: "2026-02-24"
+
+// Load all module data from localStorage
+const oilsData = JSON.parse(localStorage.getItem('oilsData')) || [];
+const saddlesData = JSON.parse(localStorage.getItem('saddlesData')) || [];
+// ... repeat for all modules
+
+// Calculate statistics
+const moduleTotals = {
+  oils: {
+    total: oilsData.reduce((sum, item) => sum + (item.huile_10w40 || 0) + (item.huile_20w50 || 0), 0),
+    today: oilsData.filter(item => item.date === todayString).reduce((sum, item) => sum + (item.huile_10w40 || 0) + (item.huile_20w50 || 0), 0)
+  },
+  saddles: {
+    total: saddlesData.length,
+    today: saddlesData.filter(item => item.date === todayString).length
+  },
+  // ... repeat for all modules
+}
+
+// Refresh data every 5 seconds
+const interval = setInterval(loadModuleData, 5000);
+```
+
+---
+
+## PART 2: MODULE PAGE ROW SELECTION CALCULATIONS
+
+### Purpose
+When a user selects a specific row in a module's data table, the summary statistics cards filter their calculations to show data "From selected row onwards" (all records from the selected row to the end of the table).
+
+### Row Selection Logic Flow
+```javascript
+// User selects a row
+const [selectedRowIndex, setSelectedRowIndex] = useState<number | null>(null);
+
+// When row is clicked
+const handleRowClick = (rowIndex: number) => {
+  setSelectedRowIndex(rowIndex);
+};
+```
+
+### Summary Cards Calculation Pattern (All Modules)
+
+#### Pattern 1: Count-Based Calculations
+Used for: Saddles, Deferred, Helmets, Orders, Reservations
+
+**Without Row Selection:**
+```javascript
+// Show total count
+cardValue = data.length;
+```
+
+**With Row Selection:**
+```javascript
+// Show count from selected row onwards
+cardValue = data.length - selectedRowIndex;
+```
+
+#### Pattern 2: Sum-Based Calculations
+Used for: Oil Sales revenue, Helmets amounts, Orders advances, etc.
+
+**Without Row Selection:**
+```javascript
+// Sum all values
+cardValue = data.reduce((sum, d) => sum + d.fieldToSum, 0);
+```
+
+**With Row Selection:**
+```javascript
+// Sum values from selected row onwards
+cardValue = data.slice(selectedRowIndex).reduce((sum, d) => sum + d.fieldToSum, 0);
+```
+
+### Module-Specific Row Selection Calculations
+
+#### Oil Sales Module Summary Cards
+```javascript
+// Card 1: Total Sales (count)
+{
+  label: 'Total Sales',
+  value: selectedRowIndex !== null 
+    ? data.length - selectedRowIndex 
+    : data.length
+}
+
+// Card 2: Total Revenue (sum prix field)
+{
+  label: 'Total Revenue',
+  value: selectedRowIndex !== null 
+    ? data.slice(selectedRowIndex).reduce((sum, d) => sum + d.prix, 0).toFixed(2) + ' TND'
+    : data.reduce((sum, d) => sum + d.prix, 0).toFixed(2) + ' TND'
+}
+
+// Card 3: Total Bottles (sum huile quantities)
+{
+  label: 'Total Bottles',
+  value: selectedRowIndex !== null 
+    ? data.slice(selectedRowIndex).reduce((sum, d) => sum + d.huile_10w40 + d.huile_20w50, 0)
+    : data.reduce((sum, d) => sum + d.huile_10w40 + d.huile_20w50, 0)
+}
+```
+
+#### Generic Module Summary Pattern (Helmets, Saddles, etc.)
+```javascript
+// Card 1: Total Records (count)
+{
+  label: 'Total Records',
+  value: selectedRowIndex !== null 
+    ? data.length - selectedRowIndex 
+    : data.length
+}
+
+// Card 2: Total Amount (sum montant/prix field)
+{
+  label: 'Total Amount',
+  value: selectedRowIndex !== null 
+    ? data.slice(selectedRowIndex).reduce((sum, d) => sum + d.montant, 0).toFixed(2) + ' TND'
+    : data.reduce((sum, d) => sum + d.montant, 0).toFixed(2) + ' TND'
+}
+
+// Card 3: Module-Specific Metric
+{
+  label: 'Module Specific',
+  value: // varies by module
+}
+```
+
+### Row Selection UI Pattern
+```javascript
+// Show indicator when row is selected
+{selectedRowIndex !== null && (
+  <p className="text-xs text-gray-500 mt-1">From selected row</p>
+)}
+
+// Clear selection on demand
+const clearSelection = () => {
+  setSelectedRowIndex(null);
+};
+```
+
+---
+
+## PART 3: TODAY'S DATE CALCULATION
+
+### Important Note
+Date calculations must be done on client-side only (inside useEffect or event handlers) to avoid hydration mismatches in Next.js.
+
+### Date Calculation Code
+```javascript
+// Client-side only
+const today = new Date();
+
+// ISO format (for filtering) - "2026-02-24"
+const todayString = today.toISOString().split('T')[0];
+
+// Formatted display (French locale) - "lundi 24 février 2026"
+const formattedDate = today.toLocaleDateString('fr-FR', {
+  weekday: 'long',
+  year: 'numeric',
+  month: 'long',
+  day: 'numeric',
+});
+```
+
+### Date Filtering Logic
+```javascript
+// Filter records for today
+const todayRecords = data.filter(record => record.date === todayString);
+
+// Count today's records
+const todayCount = todayRecords.length;
+
+// Sum today's values
+const todayTotal = todayRecords.reduce((sum, record) => sum + record.fieldToSum, 0);
+```
+
+---
+
+## PART 4: DATA PERSISTENCE (localStorage Integration)
+
+### Purpose
+Each module saves its data to localStorage so the dashboard can read and calculate statistics.
+
+### localStorage Keys
+- `'oilsData'` → Oil Sales module data
+- `'saddlesData'` → Saddles module data
+- `'deferredData'` → Deferred Sales module data
+- `'helmetsData'` → Helmets module data
+- `'ordersData'` → Orders module data
+- `'reservationsData'` → Reservations module data
+
+### Save Logic (in each module page)
+```javascript
+useEffect(() => {
+  localStorage.setItem('oilsData', JSON.stringify(data));
+}, [data]);
+
+// This runs whenever data changes (add, edit, delete)
+```
+
+### Load Logic (in dashboard)
+```javascript
+const oilsData = localStorage.getItem('oilsData') 
+  ? JSON.parse(localStorage.getItem('oilsData')!) 
+  : [];
+```
+
+---
+
+## PART 5: COMPLETE EXAMPLE - OIL SALES MODULE
+
+### Full Module Page Calculation Implementation
+```javascript
+'use client';
+import { useState, useEffect } from 'react';
+
+interface OilSale {
+  id: string;
+  date: string;
+  huile_10w40: number;
+  huile_20w50: number;
+  prix: number;
+  encaissement: string;
+  client: string;
+}
+
+export default function OilsPage() {
+  const [data, setData] = useState<OilSale[]>(initialData);
+  const [selectedRowIndex, setSelectedRowIndex] = useState<number | null>(null);
+
+  // Persist to localStorage
+  useEffect(() => {
+    localStorage.setItem('oilsData', JSON.stringify(data));
+  }, [data]);
+
+  // Calculate statistics with row filtering
+  const getStatistics = () => {
+    const slicedData = selectedRowIndex !== null 
+      ? data.slice(selectedRowIndex) 
+      : data;
+
+    return {
+      totalSales: slicedData.length,
+      totalRevenue: slicedData.reduce((sum, d) => sum + d.prix, 0),
+      totalBottles: slicedData.reduce((sum, d) => sum + d.huile_10w40 + d.huile_20w50, 0),
+      isFiltered: selectedRowIndex !== null
+    };
+  };
+
+  const stats = getStatistics();
+
+  return (
+    <>
+      {/* Summary Cards */}
+      <Card>
+        <h3>Total Sales</h3>
+        <p>{stats.totalSales}</p>
+        {stats.isFiltered && <p>From selected row</p>}
+      </Card>
+
+      <Card>
+        <h3>Total Revenue</h3>
+        <p>{stats.totalRevenue.toFixed(2)} TND</p>
+        {stats.isFiltered && <p>From selected row</p>}
+      </Card>
+
+      <Card>
+        <h3>Total Bottles</h3>
+        <p>{stats.totalBottles}</p>
+        {stats.isFiltered && <p>From selected row</p>}
+      </Card>
+
+      {/* Data Table with Row Selection */}
+      <DataTable
+        data={data}
+        onRowClick={(rowIndex) => setSelectedRowIndex(rowIndex)}
+      />
+    </>
+  );
+}
+```
+
+---
+
+## PART 6: SUMMARY TABLE
+
+| Functionality | Location | Trigger | Data Source |
+|---|---|---|---|
+| Module Card Total | Dashboard | Page load | localStorage (each module) |
+| Module Card Today | Dashboard | Page load | localStorage + date filter |
+| Row Summary Stats | Module Page | Row selection | Array slice + reduce |
+| Today's Count | Module Page | Page load | Date filter + length |
+| Total Revenue | Module Page | Data change | Sum of prix/montant field |
+| Data Persistence | All | State change | localStorage.setItem() |
+| Dashboard Refresh | Dashboard | Auto 5s interval | localStorage.getItem() |
+
+---
+
+## Implementation Checklist for New System
+
+- [ ] Implement today's date calculation in useEffect (client-side only)
+- [ ] Create localStorage persistence for each module
+- [ ] Implement row selection state in each module
+- [ ] Create slice + reduce calculations for filtered statistics
+- [ ] Display "From selected row" indicator when filtered
+- [ ] Implement dashboard card calculations using each module's localStorage key
+- [ ] Set up 5-second refresh interval on dashboard
+- [ ] Format currency values with .toFixed(2) + ' TND'
+- [ ] Use French locale for date formatting (fr-FR)
+- [ ] Handle empty localStorage gracefully with || [] fallback

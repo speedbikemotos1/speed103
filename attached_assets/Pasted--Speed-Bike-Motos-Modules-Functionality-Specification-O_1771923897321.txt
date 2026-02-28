@@ -1,0 +1,447 @@
+# Speed Bike Motos - Modules Functionality Specification
+
+## OVERVIEW
+Specification for 6 independent business management modules. Each module is a dedicated page with full CRUD operations, data persistence, real-time statistics, and data synchronization with localStorage.
+
+**Language:** All UI text, labels, and descriptions in French
+**Data Format:** JSON stored in localStorage with key format `{moduleName}Data`
+**Navigation:** Each module is accessible via dedicated route (/oils, /helmets, /saddles, /deferred, /orders, /reservations)
+
+---
+
+## GENERAL MODULE PAGE STRUCTURE
+
+**Common Page Components (All Modules):**
+
+1. **Header Section**
+   - Module title with icon
+   - Module description in French
+   - "Back" or navigation button to return
+
+2. **Add/Create Section**
+   - Button to toggle add/edit form
+   - Form validation for all fields
+   - Submit and Cancel buttons
+
+3. **Statistics/Summary Cards**
+   - Display key metrics based on module data
+   - Update dynamically when data changes
+   - Support filtered view based on selected row
+
+4. **Data Table**
+   - Display all records in tabular format
+   - Edit button per row
+   - Delete button per row with confirmation
+   - Row selection for analysis
+   - Date formatting in French locale
+
+5. **Edit Modal/Form**
+   - Pre-populate form with selected record data
+   - Update and Cancel buttons
+   - Form validation
+
+**Data Synchronization:**
+- Auto-save to localStorage on every add/edit/delete
+- Each module manages its own localStorage key
+- Data persists across page refreshes
+
+---
+
+## MODULE 1: VENTE HUILES (OIL SALES)
+
+**Route:** `/oils`
+**Data Storage Key:** `oilsData`
+
+**Data Structure (OilSale):**
+```
+{
+  id: string (unique identifier)
+  date: string (YYYY-MM-DD format)
+  huile_10w40: number (quantity of 10W40 oil bottles)
+  huile_20w50: number (quantity of 20W50 oil bottles)
+  prix: number (price in TND)
+  encaissement: string (vendor name: KARIM, ANAS, BASSEM, or YASSIN)
+  client: string (customer name)
+}
+```
+
+**Form Fields:**
+- Date picker (required)
+- Input: 10W40 quantity (number, non-negative)
+- Input: 20W50 quantity (number, non-negative)
+- Input: Price (number, positive)
+- Dropdown: Encaissement/Vendor (KARIM, ANAS, BASSEM, YASSIN)
+- Input: Client name (text)
+
+**Summary Statistics Cards:**
+- **Total Sales:** Count of all records
+- **Total Revenue:** Sum of all `prix` values in TND
+- **Total Bottles:** Sum of `huile_10w40 + huile_20w50` across all records
+
+**Table Columns:**
+- Date (formatted as DD/MM/YYYY in French locale)
+- 10W40 (quantity)
+- 20W50 (quantity)
+- Prix (TND)
+- Vendeur (encaissement)
+- Client
+- Actions (Edit, Delete)
+
+**Features:**
+- Add new oil sale record
+- Edit existing record
+- Delete record with confirmation
+- Filter statistics by selected row
+- Vendor filter (display only records from selected vendor)
+- Export to CSV (optional)
+
+**Sample Data Count:** 76 records across Jul 2025 - Feb 2026
+
+---
+
+## MODULE 2: CACHE SELLE (SADDLE CACHE)
+
+**Route:** `/saddles`
+**Data Storage Key:** `saddlesData`
+
+**Data Structure (SaddleSale):**
+```
+{
+  id: string (unique identifier)
+  date: string (YYYY-MM-DD format)
+  taille_xl: number (quantity of XL size saddles)
+  taille_xxl: number (quantity of XXL size saddles)
+  prix: number (price in TND)
+  encaissement: string (vendor/seller name)
+  client: string (customer/business name)
+}
+```
+
+**Form Fields:**
+- Date picker (required)
+- Input: XL Quantity (number, non-negative)
+- Input: XXL Quantity (number, non-negative)
+- Input: Price (number, positive)
+- Input: Encaissement/Vendor (text)
+- Input: Client name (text)
+
+**Summary Statistics Cards:**
+- **Total Sales:** Count of all records
+- **Total Saddles:** Sum of `taille_xl + taille_xxl`
+- **Total Revenue:** Sum of all `prix` values in TND
+
+**Table Columns:**
+- Date (formatted as DD/MM/YYYY)
+- XL (quantity)
+- XXL (quantity)
+- Prix (TND)
+- Encaissement (vendor)
+- Client
+- Actions (Edit, Delete)
+
+**Features:**
+- Add new saddle sale
+- Edit existing record
+- Delete with confirmation
+- Row selection for filtered analysis
+
+**Sample Data Count:** 14 records across Sep 2025 - Feb 2026
+
+---
+
+## MODULE 3: SUIVI CASQUES (HELMET TRACKING)
+
+**Route:** `/helmets`
+**Data Storage Key:** `helmetsData`
+
+**Data Structure (HelmetSale):**
+```
+{
+  id: string (unique identifier)
+  numero_facture: string (invoice number, e.g., "25/000081")
+  date: string (YYYY-MM-DD format)
+  designation: string (helmet model/type)
+  type_client: string (B2B or B2C)
+  nom_prenom: string (customer name)
+  montant: number (amount in TND)
+}
+```
+
+**Form Fields:**
+- Input: Invoice Number (text)
+- Date picker (required)
+- Input: Helmet Model/Designation (text)
+- Dropdown: Type Client (B2B, B2C)
+- Input: Customer Name (text)
+- Input: Amount (number, positive)
+
+**Summary Statistics Cards:**
+- **Total Sales:** Count of all records
+- **B2B Transactions:** Count where `type_client == "B2B"`
+- **Total Revenue:** Sum of all `montant` values in TND
+
+**Table Columns:**
+- Invoice Number
+- Date (formatted as DD/MM/YYYY)
+- Designation (helmet model)
+- Type Client (B2B/B2C)
+- Customer Name
+- Amount (TND)
+- Actions (Edit, Delete)
+
+**Features:**
+- Add new helmet sale with invoice tracking
+- Edit records
+- Delete with confirmation
+- Filter by B2B/B2C
+- Invoice number search (optional)
+
+**Sample Data Count:** 13 records from Nov 2025 - Feb 2026
+
+---
+
+## MODULE 4: SUIVI COMMANDE (ORDER TRACKING)
+
+**Route:** `/orders`
+**Data Storage Key:** `ordersData`
+
+**Data Structure (Order):**
+```
+{
+  id: string (unique identifier)
+  nom_prenom: string (customer name)
+  designation: string (product/motorcycle model)
+  avance: number (advance payment in TND)
+  date: string (YYYY-MM-DD format, can be empty)
+  numero_telephone: string (phone number)
+  remarque: string (notes/remarks)
+}
+```
+
+**Form Fields:**
+- Input: Customer Name (text, required)
+- Input: Product/Designation (text, required)
+- Input: Advance Payment (number, non-negative)
+- Date picker (optional)
+- Input: Phone Number (text)
+- Input: Remarks/Notes (textarea)
+
+**Summary Statistics Cards:**
+- **Total Orders:** Count of all records
+- **Total Advance:** Sum of all `avance` values in TND
+- **Average Advance:** Average `avance` per order
+
+**Table Columns:**
+- Customer Name
+- Product/Designation
+- Advance (TND)
+- Date (formatted as DD/MM/YYYY if present)
+- Phone Number
+- Remarks
+- Actions (Edit, Delete)
+
+**Features:**
+- Create new order with optional date and advance
+- Edit order details
+- Delete order with confirmation
+- Track payment status by advance amount
+- Display remarks/notes for each order
+- Filter by payment status (with/without advance)
+
+**Sample Data Count:** 21 records from Oct 2025 - Feb 2026
+
+---
+
+## MODULE 5: SUIVI RÉSERVATION (RESERVATION TRACKING)
+
+**Route:** `/reservations`
+**Data Storage Key:** `reservationsData`
+
+**Data Structure (Reservation):**
+```
+{
+  id: string (unique identifier)
+  nom_prenom: string (customer name)
+  designation: string (product/item being reserved)
+  avance: number (deposit amount in TND)
+  date: string (YYYY-MM-DD format)
+  numero: string (reference number or date reference)
+  remarque: string (notes about reservation)
+}
+```
+
+**Form Fields:**
+- Input: Customer Name (text, required)
+- Input: Product/Designation (text, required)
+- Input: Deposit Amount (number, non-negative)
+- Date picker (required)
+- Input: Reference Number (text)
+- Input: Remarks (textarea)
+
+**Summary Statistics Cards:**
+- **Total Reservations:** Count of all records
+- **Total Deposits:** Sum of all `avance` values in TND
+- **Pending Pickups:** Count of reservations (or count where status is pending)
+
+**Table Columns:**
+- Customer Name
+- Product/Designation
+- Deposit (TND)
+- Date (formatted as DD/MM/YYYY)
+- Reference Number
+- Remarks
+- Actions (Edit, Delete)
+
+**Features:**
+- Add new reservation with deposit tracking
+- Edit reservation details
+- Delete with confirmation
+- Track deposit status
+- Display reservation notes and reference
+
+**Sample Data Count:** 4 records from Jan 2026 - Feb 2026
+
+---
+
+## MODULE 6: VENTE DIFFÉRÉE (DEFERRED SALES)
+
+**Route:** `/deferred`
+**Data Storage Key:** `deferredData`
+
+**Data Structure (DeferredSale):**
+```
+{
+  id: string (unique identifier)
+  date: string (YYYY-MM-DD format)
+  nom_prenom: string (customer name)
+  numero_telephone: string (phone number)
+  type_moto: string (motorcycle type/model)
+  designation: string (part/item description)
+  montant: number (amount in TND)
+}
+```
+
+**Form Fields:**
+- Date picker (required)
+- Input: Customer Name (text, required)
+- Input: Phone Number (text)
+- Input: Motorcycle Type/Model (text)
+- Input: Part/Item Description (text, required)
+- Input: Amount (number, positive)
+
+**Summary Statistics Cards:**
+- **Total Deferred Sales:** Count of all records
+- **Total Amount:** Sum of all `montant` values in TND
+- **Average Sale Value:** Average `montant` per transaction
+
+**Table Columns:**
+- Date (formatted as DD/MM/YYYY)
+- Customer Name
+- Phone Number
+- Motorcycle Type
+- Part Description
+- Amount (TND)
+- Actions (Edit, Delete)
+
+**Features:**
+- Track pending/deferred sales transactions
+- Add new deferred sale
+- Edit sale details
+- Delete with confirmation
+- Search by customer name
+- Filter by motorcycle type
+
+**Sample Data Count:** 2 records from Sep 2025 - Oct 2025
+
+---
+
+## COMMON FEATURES ACROSS ALL MODULES
+
+**Form Validation:**
+- Required fields enforcement
+- Date format validation (YYYY-MM-DD)
+- Number fields accept only positive values (where applicable)
+- Phone numbers validation (optional - can be any text)
+- All error messages in French
+
+**User Actions:**
+- **Add:** Open form, fill fields, submit to create new record
+- **Edit:** Click edit button, pre-populate form, modify, submit
+- **Delete:** Click delete, show confirmation modal, confirm to delete
+- **Cancel:** Reset form, return to table view
+
+**Table Interactions:**
+- Click row to select for analysis
+- Selected row filters statistics (if applicable)
+- Edit/Delete buttons on each row
+- Sortable columns (optional enhancement)
+
+**Data Persistence:**
+- All data stored in localStorage with module-specific key
+- Auto-save on create/update/delete
+- Survives page refresh
+- No backend required (localStorage only)
+
+**UI Styling:**
+- Module-specific color scheme with gradient backgrounds
+- French locale for all dates (DD/MM/YYYY format)
+- Responsive layout (mobile, tablet, desktop)
+- Consistent header and navigation
+- Form validation feedback (error messages in French)
+
+**Date Handling:**
+- All dates stored as YYYY-MM-DD in localStorage
+- Display as DD/MM/YYYY in French locale on tables
+- Date pickers use system locale
+- Current date available for auto-fill
+
+**Icons & Visual Elements:**
+- Module-specific icon in header
+- Edit and Delete action buttons
+- Add button with icon
+- Back/navigation button
+- Color-coded type indicators (B2B/B2C, vendor names, etc.)
+
+---
+
+## IMPLEMENTATION REQUIREMENTS
+
+**Language:**
+- All labels, placeholders, button text in French
+- All error messages in French
+- Date formatting using French locale
+
+**Technology Stack:**
+- React/Next.js for UI
+- localStorage for data persistence
+- No backend/database required
+- Responsive design (Tailwind CSS recommended)
+
+**Key Behaviors:**
+- Real-time updates when data changes
+- Immediate localStorage sync
+- Form clear after successful submission
+- Confirmation before delete operations
+- Date pickers with default to today
+- All fields trimmed of whitespace
+
+**No External Dependencies Required:**
+- No API calls
+- No authentication
+- No user roles/permissions
+- Pure client-side CRUD
+
+---
+
+## SUMMARY
+
+| Module | Route | Records | Key Fields | Storage |
+|--------|-------|---------|-----------|---------|
+| Oil Sales | /oils | 76 | date, 10W40, 20W50, price, vendor, client | oilsData |
+| Saddles | /saddles | 14 | date, XL, XXL, price, vendor, client | saddlesData |
+| Helmets | /helmets | 13 | invoice, date, model, type, name, amount | helmetsData |
+| Orders | /orders | 21 | name, product, advance, date, phone, notes | ordersData |
+| Reservations | /reservations | 4 | name, product, deposit, date, ref, notes | reservationsData |
+| Deferred Sales | /deferred | 2 | date, name, phone, moto, part, amount | deferredData |
+
+All modules follow consistent CRUD patterns with independent localStorage persistence and real-time statistics updates.

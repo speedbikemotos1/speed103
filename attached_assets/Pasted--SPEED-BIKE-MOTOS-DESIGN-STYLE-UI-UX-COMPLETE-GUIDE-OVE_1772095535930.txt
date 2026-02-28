@@ -1,0 +1,487 @@
+# SPEED BIKE MOTOS - DESIGN, STYLE & UI/UX COMPLETE GUIDE
+
+## OVERALL DESIGN PHILOSOPHY
+- **Modern, Clean, Professional**: Minimalist enterprise application style
+- **Trust-focused**: Neutral colors with strategic red accents for brand identity
+- **Data-centric**: Table-heavy with clear information hierarchy
+- **Responsive**: Desktop-first but fully responsive to mobile
+- **Accessibility-first**: High contrast, semantic HTML, proper ARIA labels
+
+---
+
+## TYPOGRAPHY
+
+### Font Stack
+- **Sans-serif**: Geist (Google Font) - Primary font for all UI text
+- **Monospace**: Geist Mono (Google Font) - Not actively used currently
+- **Font fallback**: System fonts as secondary option
+
+### Font Sizes & Weights
+- **Page Titles**: 24px, Bold (font-bold)
+- **Section Headers (h2)**: 18px, Bold (font-bold)
+- **Card Titles**: 16px, Bold (font-bold)
+- **Body Text**: 14px-16px, Regular (font-normal)
+- **Labels**: 12px-14px, Medium weight (font-medium)
+- **Small Text / Captions**: 12px, Regular
+- **Statistics Numbers**: 32px, Bold (font-bold)
+
+### Line Height
+- **Body text**: 1.5-1.6 (leading-relaxed or leading-6)
+- **Headings**: 1.2-1.3
+- **Tight spacing**: 1.1-1.2
+
+---
+
+## COLOR SYSTEM
+
+### Primary Brand Colors
+- **Primary Red**: #DC2626 (from-red-600), #991B1B (to-red-700)
+  - Used for: CTAs, accents, highlights, gradient backgrounds
+  - Gradient: `from-red-600 to-red-700` or `from-red-600 via-red-700 to-gray-900`
+
+### Neutral Palette
+- **White**: #FFFFFF (oklch(1 0 0)) - Card backgrounds, primary surfaces
+- **Off-white**: #F3F4F6 (gray-100) - Light backgrounds, header rows
+- **Gray 50**: #F9FAFB - Very light surfaces
+- **Gray 100**: #F3F4F6 - Light backgrounds
+- **Gray 200**: #E5E7EB - Light borders
+- **Gray 300**: #D1D5DB - Medium borders
+- **Gray 500**: #6B7280 - Secondary text
+- **Gray 600**: #4B5563 - Primary text color
+- **Gray 700**: #374151 - Dark text
+- **Gray 900**: #111827 - Darkest text
+
+### Accent Colors by Module (Gradient Backgrounds)
+- **Oil Sales**: amber-500 to orange-600
+- **Saddles**: blue-500 to cyan-600
+- **Deferred Sales**: purple-500 to pink-600
+- **Helmets**: red-500 to rose-600
+- **Orders**: green-500 to emerald-600
+- **Reservations**: indigo-500 to blue-600
+
+### Semantic Colors
+- **Success/Positive**: green-600
+- **Danger/Delete**: red-500 (#EF4444)
+- **Destructive (stronger)**: oklch(0.577 0.245 27.325)
+- **Borders**: gray-200 (#E5E7EB)
+- **Background Gradient**: from-gray-50 via-white to-gray-100
+
+### Color Usage Rules
+- All text must use design tokens, not direct colors (e.g., text-foreground, not text-white)
+- Card backgrounds: bg-white
+- Page backgrounds: bg-gradient-to-br from-gray-50 to-gray-100
+- Section dividers: border-gray-200
+- Hover states: Slightly darker or lighter version of base color
+
+---
+
+## LAYOUT & SPACING
+
+### Layout Method Priority (Tailwind)
+1. **Flexbox** (most layouts): `flex items-center justify-between`, `flex flex-col`, `flex gap-4`
+2. **CSS Grid** (complex 2D): `grid grid-cols-3 gap-4` (rarely used)
+3. Never: floats or absolute positioning (except header logo is flex-based)
+
+### Container Max-Widths
+- **Main Content**: `max-w-7xl` (1280px) - Used for all module pages
+- **Padding**: `px-4` on mobile, `sm:px-6`, `lg:px-8` on larger screens
+- **Vertical Padding**: `py-8` for page sections
+
+### Spacing Scale (Tailwind)
+- **Gap between elements**: `gap-2`, `gap-3`, `gap-4`, `gap-6`, `gap-8`
+- **Margin/Padding**: `mb-4`, `mb-6`, `mb-8`, `mt-2`, `mt-4`, `px-4`, `py-6`, `p-6`
+- **Micro spacing**: gap-2 or gap-3 for tight grouping
+- **Macro spacing**: gap-6 or gap-8 between major sections
+
+### Common Spacing Patterns
+- **Cards**: `p-6` (24px padding)
+- **Form inputs**: `gap-4` between fields
+- **Table rows**: `h-12` (3rem height)
+- **Sections**: `mb-8` separation
+- **Columns grid**: `grid grid-cols-1 gap-4 md:grid-cols-3` (responsive)
+
+---
+
+## COMPONENTS & PATTERNS
+
+### Header / Navigation
+- **Component**: SiteHeader
+- **Layout**: Flexbox with items-center justify-between
+- **Logo**: 40x40px image on left
+- **Branding Text**: Hidden on mobile (hidden sm:block)
+  - Title: "SPEED" in red gradient
+  - Subtitle: "BIKE MOTOS" in gray
+- **Right side**: "Suivi des Ventes" text subtitle
+- **Border**: border-b border-gray-200
+- **Shadow**: shadow-sm
+- **Background**: bg-white
+
+### Cards / Container Boxes
+- **Component**: shadcn Card
+- **Padding**: p-6 (standard), p-4 (compact)
+- **Border**: border border-gray-200
+- **Shadow**: shadow-sm (base), shadow-md (hover)
+- **Background**: bg-white
+- **Rounded**: rounded-lg (default from design tokens)
+- **Transition**: transition-shadow on hover
+- **Hover Effect**: `hover:shadow-md`
+
+### Buttons
+- **Primary CTA**: 
+  - Background: `bg-gradient-to-r from-red-600 to-red-700`
+  - Hover: `hover:from-red-700 hover:to-red-800`
+  - Text: `text-white font-semibold`
+  - Padding: `px-4 py-2`
+  - Rounded: rounded-lg
+  - Icon with text: `gap-2`
+- **Ghost/Secondary**:
+  - Background: transparent or gray-50
+  - Text: text-gray-600 or text-gray-900
+  - Hover: bg-gray-100 or underline
+- **Icon Buttons**:
+  - Size: `h-8 w-8` or `h-10 w-10`
+  - Edit: text-gray-500, hover:text-gray-900
+  - Delete: text-red-500, hover:text-red-700
+
+### Summary Statistics Cards (3-column grid)
+- **Container**: `grid grid-cols-1 gap-4 md:grid-cols-3`
+- **Card styling**: p-6 bg-white border border-gray-200 shadow-sm
+- **Title**: "text-sm font-medium text-gray-600"
+- **Number**: "text-4xl font-bold text-gray-900" (or text-red-600 for revenue)
+- **Subtext**: "text-xs text-gray-500 mt-1"
+- **Card variant**: Some have gradient bg (e.g., from-red-50 to-white with border-red-100)
+- **Always 3 cards per module**: Total Sales, Total Revenue/Income, Total Items/Count
+
+### Data Table
+- **Container**: Card with p-6
+- **Table Header**:
+  - Background: bg-gray-100
+  - Text: font-semibold text-gray-900
+  - Hover: hover:bg-gray-100 (no change, stays same)
+- **Table Rows**:
+  - Default: hover:bg-gray-50
+  - Selected: bg-red-50 hover:bg-red-100
+  - Text**: text-gray-900
+  - Selected text: font-medium text-red-700
+- **Borders**: border-gray-200
+- **Row height**: ~48px (h-12)
+- **Actions column**: Right-aligned with Edit and Delete icons
+- **Empty state**: py-8 text-center text-gray-500
+- **Data order**: Newest to oldest (last entry first)
+  - Date column formatted as: new Date(val).toLocaleDateString('fr-FR')
+  - For price/amounts: format with 2 decimals and currency (e.g., "18.00 TND")
+
+### Forms
+- **Container**: Card with p-6
+- **Title**: "mb-4 text-xl font-bold text-gray-900"
+- **Form layout**: flex flex-col gap-4
+- **Input fields**: 
+  - Full width
+  - Border: border border-input
+  - Rounded: rounded-md
+  - Padding: px-3 py-2
+  - Focus: focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2
+- **Labels**: "block mb-2 font-medium text-gray-700"
+- **Button group**: flex gap-2 justify-end mt-6
+- **Submit button**: Primary CTA style (red gradient)
+- **Cancel button**: Ghost/secondary style
+
+### Page Headers
+- **Component**: PageHeader
+- **Title**: Large, bold (24px+)
+- **Description**: Gray 600 text, regular weight
+- **Icon**: Placed next to or above title, color-matched to module
+- **Layout**: Flexbox vertical or horizontal arrangement
+
+### Row Selection Behavior
+- **Click anywhere in row**: Select/deselect that row
+- **Visual feedback**: Background color change and text highlighting
+- **Selected row styling**: bg-red-50, text-red-700 font-medium
+- **Statistics update**: When row selected, cards show data "From selected row" onwards
+
+---
+
+## TABLE COLUMN ORDER & DETAILS
+
+### Data Ordering
+- **Direction**: Newest entries first (reverse chronological order)
+- **Sort field**: Always by date (most recent first)
+- **Default display**: Don't need explicit sorting, just reverse the data array
+
+### Module-Specific Column Order
+
+#### Oil Sales (Vente Huiles)
+```
+DATE | 10W40 | 20W50 | PRIX | Vendeur | Client
+```
+- DATE: French format (e.g., "15 juillet 2025")
+- 10W40 & 20W50: Integer quantities
+- PRIX: Formatted as "18.00 TND"
+- Vendeur: Vendor name (KARIM, ANAS, BASSEM, YASSIN)
+- Client: Customer name (optional, can be empty)
+
+#### Helmets (Suivi Casques)
+```
+N° Facture | DATE | Désignation | Type Client | Nom/Prénom | Montant
+```
+- N° Facture: Invoice number (e.g., "25/000081")
+- DATE: French format
+- Désignation: Product name with size/model
+- Type Client: B2B or B2C
+- Nom/Prénom: Customer name
+- Montant: Price formatted "385.00 TND"
+
+#### Saddles (Cache Selle)
+```
+DATE | XL | XXL | PRIX | Encaissement | Client
+```
+- DATE: French format
+- XL & XXL: Integer quantities for each size
+- PRIX: Formatted as "115.00 TND"
+- Encaissement: Either price or vendor name (contextual)
+- Client: Customer name
+
+#### Deferred Sales (Vente Différée)
+```
+DATE | Nom et Prénom | N° Téléphone | Type Moto | Désignation | Montant
+```
+- DATE: French format
+- Nom et Prénom: Full customer name
+- N° Téléphone: Phone number
+- Type Moto: Motorcycle model
+- Désignation: Product/part description
+- Montant: Price formatted "40.00 TND"
+
+#### Orders (Suivi Commande)
+```
+Nom / Prénom | Désignation | Avance | DATE | N° Téléphone | Remarques
+```
+- Nom / Prénom: Customer name
+- Désignation: Motorcycle model or product
+- Avance: Down payment amount
+- DATE: French format (can be empty)
+- N° Téléphone: Phone number
+- Remarques: Notes about order/payment terms
+
+#### Reservations (Suivi Réservation)
+```
+Nom et Prénom | Désignation | Avance | DATE | N° | Remarques
+```
+- Nom et Prénom: Customer name
+- Désignation: Reserved product
+- Avance: Advance payment
+- DATE: French format
+- N° : Reservation number/ID
+- Remarques: Special notes
+
+---
+
+## INTERACTIONS & BEHAVIORS
+
+### Row Selection
+- **Trigger**: Click anywhere on a row
+- **Visual state**: Row background + text color change
+- **Persistence**: Selection stays until another row clicked or deselected
+- **Effect on stats**: Summary cards recalculate from selected row onwards
+- **Clear selection**: Click the same row again to deselect
+
+### Add/Edit Toggle
+- **Initial state**: "Add" button visible
+- **Clicked**: Form appears above table, button disappears
+- **Cancel**: Form closes, button returns
+- **Submit**: Form closes, data updates, button returns
+- **Edit row**: Form populates with row data, title changes to "Edit..."
+
+### Delete Action
+- **Trigger**: Click trash icon in Actions column
+- **Confirmation**: Confirm delete (consider adding confirmation dialog)
+- **Effect**: Row removed from table, data updates, localStorage syncs
+- **Stats**: Summary cards automatically recalculate
+
+### Table Scrolling
+- **Desktop**: Full table visible with horizontal scroll if needed
+- **Mobile**: Responsive grid or card layout (stacked)
+- **Actions**: Always right-aligned and accessible
+
+### Hover States
+- **Cards**: shadow-sm → shadow-md with transition
+- **Buttons**: Color shift or opacity change
+- **Table rows**: bg-gray-50 (unselected) or bg-red-100 (selected)
+- **Links**: Underline or color change
+
+---
+
+## RESPONSIVE BREAKPOINTS
+
+### Mobile-First Approach
+- **Base (mobile)**: `px-4`, single column layouts
+- **Small (sm: 640px)**: `sm:px-6`, hidden text shown
+- **Medium (md: 768px)**: `md:grid-cols-2`, `md:grid-cols-3` for cards
+- **Large (lg: 1024px)**: `lg:px-8`, full layouts
+- **XL (xl: 1280px)**: max-w-7xl containers fully utilized
+
+### Responsive Patterns Used
+- **Grid columns**: 
+  ```
+  grid-cols-1 gap-4 md:grid-cols-3
+  grid-cols-1 md:grid-cols-2 lg:grid-cols-3
+  ```
+- **Hidden on mobile**: `hidden sm:block` (header text, right-side nav)
+- **Full width on mobile**: All cards and tables take full width with padding
+- **Text sizing**: Same across all breakpoints (no text-sm variants for responsiveness)
+
+---
+
+## ICONS
+
+### Icon Library
+- **Source**: lucide-react icons
+- **Common icons used**:
+  - `Plus` - Add/new entry button
+  - `Droplet` - Oil sales module
+  - `Package` - Saddles module
+  - `TrendingDown` - Deferred sales
+  - `Shield` - Helmets module
+  - `ShoppingCart` - Orders module
+  - `BookmarkCheck` - Reservations module
+  - `Edit2` - Edit action
+  - `Trash2` - Delete action
+
+### Icon Sizing
+- **Page headers**: h-8 w-8 (32px)
+- **Buttons with text**: h-4 w-4 (16px)
+- **Icon-only buttons**: h-8 w-8 or h-10 w-10 (32px or 40px)
+- **Inline icons**: h-4 w-4 (16px)
+
+### Icon Colors
+- **Module icons**: Match module gradient color
+- **Edit icon**: text-gray-500, hover:text-gray-900
+- **Delete icon**: text-red-500, hover:text-red-700
+- **Action buttons**: text-white (on colored backgrounds)
+
+---
+
+## ANIMATION & TRANSITIONS
+
+### Transition Classes Used
+- `transition-colors` - Color changes on hover
+- `transition-shadow` - Shadow depth on hover
+- `transition-all` - All property changes
+
+### Duration
+- Default: 300ms (Tailwind default)
+- Fast interactions: 150ms (not explicitly set, just mention if custom needed)
+
+### Examples
+- Card hover: `transition-shadow hover:shadow-md`
+- Button hover: Color gradient shift with `hover:from-red-700 hover:to-red-800`
+- Row hover: `transition-colors hover:bg-gray-50`
+- Selected row: Instant color change (no animation)
+
+---
+
+## ACCESSIBILITY
+
+### Semantic HTML
+- Use `<main>` for page content
+- Use `<header>` for site header
+- Use `<table>` for data tables (not divs)
+- Use `<button>` for buttons
+- Use `<form>` for forms
+
+### ARIA Attributes
+- Table role: `role="table"` on Table component
+- Row selection: aria-selected attribute on selectable rows
+- Icons in buttons: Ensure button has descriptive text or aria-label
+- Empty states: aria-label for "no data" messages
+
+### Color Contrast
+- All text meets WCAG AA standards
+- Dark text on light backgrounds (gray-900 on white/gray-50)
+- Light text on dark backgrounds (white on red-600+)
+- Focus indicators: 2px outline with ring color
+
+### Keyboard Navigation
+- Tab through all interactive elements
+- Enter/Space to activate buttons
+- Click handlers on divs should have tabindex or be actual buttons
+- Row selection should work with click (already implemented)
+
+---
+
+## BRAND CONSISTENCY
+
+### Company Colors
+- **Red**: Primary brand color (#DC2626)
+- **White/Gray**: Neutral palette
+- **Logo**: Top-left corner in header (40x40px)
+- **Typography**: "SPEED" in red gradient, "BIKE MOTOS" in gray
+- **Overall tone**: Professional, trustworthy, data-focused
+
+### Visual Hierarchy
+1. **Most important**: Statistics numbers (32px, bold, red for revenue)
+2. **Secondary**: Page titles, section headers (24px, bold)
+3. **Tertiary**: Table headers, labels (12px-14px, medium)
+4. **Supporting**: Body text, descriptions (14px-16px, regular)
+
+### Consistency Rules
+- All modules use same card/button/table styles
+- All modules use same typography
+- All modules use same spacing scale
+- Color variations only in module icon/gradient, not core UI
+- Form styling identical across all modules
+- Header consistent on all pages
+
+---
+
+## SUMMARY: KEY STYLING COMMANDS
+
+```css
+/* Page background */
+bg-gradient-to-br from-gray-50 to-gray-100
+
+/* Card */
+p-6 bg-white border border-gray-200 shadow-sm hover:shadow-md transition-shadow
+
+/* Primary button */
+bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white font-semibold
+
+/* Table */
+border border-gray-200 rounded-lg overflow-hidden
+
+/* Row selected */
+bg-red-50 hover:bg-red-100
+
+/* Stats card */
+text-4xl font-bold text-gray-900 (or text-red-600)
+
+/* Labels */
+text-sm font-medium text-gray-600
+
+/* Summary grid */
+grid grid-cols-1 gap-4 md:grid-cols-3
+```
+
+---
+
+## TABLE DATA DISPLAY ORDER (IMPLEMENTATION)
+
+### Newest to Oldest
+- Before passing data to DataTable component, sort or reverse the array
+- Example: `data.reverse()` or keep data in reverse order from the start
+- Date column should always show newest entries first when page loads
+
+### Example Implementation
+```javascript
+// Sort data newest first (descending date order)
+const sortedData = [...data].sort((a, b) => 
+  new Date(b.date).getTime() - new Date(a.date).getTime()
+);
+
+// Or if loading from storage, reverse it
+const displayData = data.reverse();
+```
+
+### Display Format for Dates
+- Always use: `new Date(val).toLocaleDateString('fr-FR')`
+- Output example: "15 juillet 2025" or "15/07/2025"
