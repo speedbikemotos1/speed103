@@ -3,6 +3,7 @@ import { join } from "path";
 import * as XLSX from "xlsx";
 import { db } from "../server/db";
 import { clients, type InsertClient } from "../shared/schema";
+import { sql } from "drizzle-orm";
 
 function findColumnKey(row: any, candidates: string[]): string | null {
   const entries = Object.keys(row || {}).map((key) => ({
@@ -40,72 +41,72 @@ async function importClients() {
 
   const sample = rows[0];
 
-  const nameKey =
-    findColumnKey(sample, [
-      "nom/prénom",
-      "nom prénom",
-      "nom et prénom",
-      "nom",
-      "client",
-    ]) ?? Object.keys(sample)[0];
-
-  const phoneKey =
-    findColumnKey(sample, [
-      "téléphone",
-      "telephone",
-      "tel",
-      "gsm",
-      "numero",
-      "numéro",
-    ]) ?? Object.keys(sample)[1] ?? nameKey;
-
-  const remarkKey =
-    findColumnKey(sample, ["remarque", "note", "commentaire", "obs"]) ??
-    Object.keys(sample)[2] ??
-    nameKey;
+  const idKey = findColumnKey(sample, ["n°", "id", "numéro", "numero", "index"]) ?? Object.keys(sample)[0];
+  const nameKey = findColumnKey(sample, ["nom/prénom", "nom prénom", "nom et prénom", "nom", "client"]) ?? Object.keys(sample)[1];
+  const phoneKey = findColumnKey(sample, ["téléphone", "telephone", "tel", "gsm", "numero", "numéro"]) ?? Object.keys(sample)[2];
+  const remarkKey = findColumnKey(sample, ["remarque", "note", "commentaire", "obs"]) ?? Object.keys(sample)[3];
 
   console.log("✅ Detected columns:");
+  console.log("   ID         :", idKey);
   console.log("   Nom/Prénom :", nameKey);
   console.log("   Téléphone  :", phoneKey);
   console.log("   Remarque   :", remarkKey);
 
-  const existing = await db.select().from(clients);
-  const existingKey = new Set(
-    existing.map(
-      (c) =>
-        `${c.nomPrenom.toLowerCase().trim()}|${(c.numeroTelephone ?? "")
-          .toLowerCase()
-          .trim()}`,
-    ),
-  );
+  // Clear existing clients to ensure exact match and order
+  console.log("🧹 Clearing existing clients...");
+  await db.delete(clients);
 
   const toInsert: InsertClient[] = [];
 
   for (const row of rows) {
+    const rawId = parseInt(String(row[idKey] || "0").replace(/[^0-9]/g, ""));
     const rawName = String(row[nameKey] ?? "").trim();
     const rawPhone = String(row[phoneKey] ?? "").trim();
     const rawRemark = String(row[remarkKey] ?? "").trim();
 
-    if (!rawName) continue;
+    if (!rawName && !rawPhone) continue;
 
-    const key = `${rawName.toLowerCase()}|${rawPhone.toLowerCase()}`;
-    if (existingKey.has(key)) continue;
+    // Handle two phone numbers or sub-client logic
+    // Pattern: "Phone1 / Phone2" or "Phone1 - Name2: Phone2"
+    let phone1 = rawPhone;
+    let hasSub = false;
+    let subName = "";
+    let subPhone = "";
 
-    existingKey.add(key);
+    if (rawPhone.includes("/") || rawPhone.includes("-") || rawPhone.includes("\n")) {
+      const parts = rawPhone.split(/[\/\n-]/).map(p => p.trim());
+      phone1 = parts[0];
+      if (parts.length > 1) {
+        hasSub = true;
+        const subPart = parts[1];
+        if (subPart.includes(":")) {
+          const [n, p] = subPart.split(":").map(x => x.trim());
+          subName = n;
+          subPhone = p;
+        } else {
+          subPhone = subPart;
+        }
+      }
+    }
 
     toInsert.push({
+      uniqueNumber: rawId || null,
       nomPrenom: rawName,
-      numeroTelephone: rawPhone,
+      numeroTelephone: phone1,
+      hasSubClient: hasSub,
+      subClientName: subName || null,
+      subClientPhone: subPhone || null,
       remarque: rawRemark,
     });
   }
 
   if (!toInsert.length) {
-    console.log("ℹ️ No new clients to insert (all already exist).");
+    console.log("ℹ️ No clients found to insert.");
     return;
   }
 
   console.log(`➡️ Inserting ${toInsert.length} clients into database...`);
+  // Insert in batches or one by one to preserve order if needed, but values() preserves order in SQL usually
   await db.insert(clients).values(toInsert);
   console.log("✅ Import completed.");
 }
@@ -114,4 +115,3 @@ importClients().catch((err) => {
   console.error("❌ Error importing clients:", err);
   process.exit(1);
 });
-

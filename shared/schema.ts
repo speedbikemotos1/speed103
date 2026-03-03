@@ -328,8 +328,12 @@ export type InsertDeferredSale = z.infer<typeof insertDeferredSaleSchema>;
 
 export const clients = sqliteTable("clients", {
   id: integer("id").primaryKey({ autoIncrement: true }),
+  uniqueNumber: integer("unique_number"),
   nomPrenom: text("nom_prenom").notNull(),
   numeroTelephone: text("numero_telephone").default("").notNull(),
+  hasSubClient: integer("has_sub_client", { mode: "boolean" }).default(false),
+  subClientName: text("sub_client_name"),
+  subClientPhone: text("sub_client_phone"),
   remarque: text("remarque").default("").notNull(),
   createdAt: integer("created_at", { mode: "timestamp_ms" }).default(
     sql`(unixepoch() * 1000)`,

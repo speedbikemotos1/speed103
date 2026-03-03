@@ -24,6 +24,9 @@ export default function GestionClientsPage() {
     nomPrenom: "",
     numeroTelephone: "",
     remarque: "",
+    hasSubClient: false,
+    subClientName: "",
+    subClientPhone: "",
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -38,7 +41,14 @@ export default function GestionClientsPage() {
       }
       setOpen(false);
       setEditingId(null);
-      setForm({ nomPrenom: "", numeroTelephone: "", remarque: "" });
+      setForm({
+        nomPrenom: "",
+        numeroTelephone: "",
+        remarque: "",
+        hasSubClient: false,
+        subClientName: "",
+        subClientPhone: "",
+      });
     } catch (err: any) {
       toast({ title: "Erreur", description: err?.message || "Création impossible", variant: "destructive" });
     }
@@ -56,14 +66,20 @@ export default function GestionClientsPage() {
 
   const filteredClients = useMemo(() => {
     const q = search.toLowerCase().trim();
-    if (!q) return clients;
-    return clients.filter((c) => {
+    // Use uniqueNumber for ordering if available, otherwise preserve DB order (which is import order)
+    const sorted = [...clients].sort((a, b) => (b.uniqueNumber || 0) - (a.uniqueNumber || 0));
+    if (!q) return sorted;
+    return sorted.filter((c) => {
       const name = c.nomPrenom?.toLowerCase() ?? "";
       const phone = c.numeroTelephone?.toLowerCase() ?? "";
+      const subName = c.subClientName?.toLowerCase() ?? "";
+      const subPhone = c.subClientPhone?.toLowerCase() ?? "";
       const remark = c.remarque?.toLowerCase() ?? "";
       return (
         name.includes(q) ||
         phone.includes(q) ||
+        subName.includes(q) ||
+        subPhone.includes(q) ||
         remark.includes(q)
       );
     });
@@ -89,7 +105,14 @@ export default function GestionClientsPage() {
               setOpen(o);
               if (!o) {
                 setEditingId(null);
-                setForm({ nomPrenom: "", numeroTelephone: "", remarque: "" });
+                setForm({
+                  nomPrenom: "",
+                  numeroTelephone: "",
+                  remarque: "",
+                  hasSubClient: false,
+                  subClientName: "",
+                  subClientPhone: "",
+                });
               }
             }}
           >
@@ -98,7 +121,7 @@ export default function GestionClientsPage() {
                 <Plus className="w-5 h-5 stroke-[3px]" /> Nouveau client
               </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[520px] rounded-[2rem] border-none shadow-2xl p-8">
+            <DialogContent className="sm:max-w-[520px] rounded-[2rem] border-none shadow-2xl p-8 max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle className="text-2xl font-black text-gray-900 uppercase italic tracking-tight">
                   {editingId ? "Modifier un client" : "Créer un client"}
@@ -111,8 +134,33 @@ export default function GestionClientsPage() {
                 </div>
                 <div className="grid gap-2">
                   <Label className="font-bold text-gray-700 uppercase tracking-wider text-xs px-1">Téléphone</Label>
-                  <Input value={form.numeroTelephone} onChange={(e) => setForm({ ...form, numeroTelephone: e.target.value })} className="h-12 rounded-xl border-gray-200 font-medium" placeholder="Optionnel" />
+                  <Input value={form.numeroTelephone} onChange={(e) => setForm({ ...form, numeroTelephone: e.target.value })} className="h-12 rounded-xl border-gray-200 font-medium" placeholder="Ex: 55 123 456" />
                 </div>
+
+                <div className="flex items-center space-x-2 py-2">
+                  <input
+                    type="checkbox"
+                    id="hasSubClient"
+                    checked={form.hasSubClient}
+                    onChange={(e) => setForm({ ...form, hasSubClient: e.target.checked })}
+                    className="w-4 h-4 rounded border-gray-300 text-red-600 focus:ring-red-500"
+                  />
+                  <Label htmlFor="hasSubClient" className="font-bold text-gray-700 uppercase tracking-wider text-xs cursor-pointer">Deuxième numéro / Sous-client</Label>
+                </div>
+
+                {form.hasSubClient && (
+                  <div className="grid gap-4 p-4 bg-slate-50 rounded-2xl border border-slate-100 animate-in fade-in slide-in-from-top-2">
+                    <div className="grid gap-2">
+                      <Label className="font-bold text-gray-700 uppercase tracking-wider text-[10px] px-1">Nom Sous-client (Optionnel)</Label>
+                      <Input value={form.subClientName || ""} onChange={(e) => setForm({ ...form, subClientName: e.target.value })} className="h-11 rounded-xl border-gray-200 bg-white font-medium" placeholder="Ex: Mme Flen" />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label className="font-bold text-gray-700 uppercase tracking-wider text-[10px] px-1">Téléphone Sous-client</Label>
+                      <Input value={form.subClientPhone || ""} onChange={(e) => setForm({ ...form, subClientPhone: e.target.value })} className="h-11 rounded-xl border-gray-200 bg-white font-medium" placeholder="Ex: 98 765 432" />
+                    </div>
+                  </div>
+                )}
+
                 <div className="grid gap-2">
                   <Label className="font-bold text-gray-700 uppercase tracking-wider text-xs px-1">Remarque</Label>
                   <Input value={form.remarque} onChange={(e) => setForm({ ...form, remarque: e.target.value })} className="h-12 rounded-xl border-gray-200 font-medium" placeholder="Optionnel" />
@@ -153,22 +201,39 @@ export default function GestionClientsPage() {
               <Table>
                 <TableHeader>
                   <TableRow className="bg-slate-50/90 hover:bg-slate-50/90 border-b-2 border-slate-100">
-                    <TableHead className="font-black text-slate-700 h-14 w-14 text-center uppercase tracking-widest text-[10px]">N°</TableHead>
+                    <TableHead className="font-black text-slate-700 h-14 w-14 text-center uppercase tracking-widest text-[10px]">N° Unique</TableHead>
                     <TableHead className="font-black text-slate-700 h-14 uppercase tracking-widest text-[10px]">Nom / Prénom</TableHead>
-                    <TableHead className="font-black text-slate-700 h-14 uppercase tracking-widest text-[10px]">Téléphone</TableHead>
+                    <TableHead className="font-black text-slate-700 h-14 uppercase tracking-widest text-[10px]">Téléphone(s)</TableHead>
                     <TableHead className="font-black text-slate-700 h-14 uppercase tracking-widest text-[10px] min-w-[180px]">Remarque</TableHead>
                     <TableHead className="text-right font-black text-slate-700 h-14 uppercase tracking-widest text-[10px] pr-6">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredClients.map((c, index) => (
+                  {filteredClients.map((c) => (
                     <TableRow
                       key={c.id}
                       className="transition-all duration-200 h-16 border-b border-gray-50/80 group hover:bg-slate-50/50 last:border-b-0"
                     >
-                      <TableCell className="py-4 text-center font-bold text-slate-500 tabular-nums w-14">{index + 1}</TableCell>
-                      <TableCell className="py-4 font-bold text-gray-900">{c.nomPrenom}</TableCell>
-                      <TableCell className="py-4 font-medium text-gray-600">{c.numeroTelephone || "—"}</TableCell>
+                      <TableCell className="py-4 text-center font-bold text-slate-500 tabular-nums w-14">{c.uniqueNumber || "—"}</TableCell>
+                      <TableCell className="py-4 font-bold text-gray-900">
+                        {c.nomPrenom}
+                        {c.hasSubClient && c.subClientName && (
+                          <div className="text-[10px] text-slate-400 font-medium uppercase tracking-tight mt-0.5">
+                            Sous-client: {c.subClientName}
+                          </div>
+                        )}
+                      </TableCell>
+                      <TableCell className="py-4 font-medium text-gray-600">
+                        <div className="flex flex-col gap-0.5">
+                          <span className="tabular-nums">{c.numeroTelephone || "—"}</span>
+                          {c.hasSubClient && c.subClientPhone && (
+                            <span className="text-[11px] text-slate-400 tabular-nums flex items-center gap-1">
+                              <span className="w-1 h-1 rounded-full bg-slate-300" />
+                              {c.subClientPhone}
+                            </span>
+                          )}
+                        </div>
+                      </TableCell>
                       <TableCell className="py-4 font-medium text-gray-500 max-w-[220px] truncate" title={c.remarque || ""}>{c.remarque || "—"}</TableCell>
                       <TableCell className="text-right py-4 pr-6">
                         <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -181,6 +246,9 @@ export default function GestionClientsPage() {
                                 nomPrenom: c.nomPrenom,
                                 numeroTelephone: c.numeroTelephone || "",
                                 remarque: c.remarque || "",
+                                hasSubClient: c.hasSubClient || false,
+                                subClientName: c.subClientName || "",
+                                subClientPhone: c.subClientPhone || "",
                               });
                               setOpen(true);
                             }}
