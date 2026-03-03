@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -20,12 +21,14 @@ import {
   useHelmetStock,
   useUpdateHelmetSale,
 } from "@/hooks/use-helmets";
+import { useClients } from "@/hooks/use-clients";
 
 export default function HelmetsPage() {
   const { toast } = useToast();
   const { data: sales = [] } = useHelmetSales();
   const { data: purchases = [] } = useHelmetPurchases();
   const { data: stockRows = [] } = useHelmetStock();
+  const { data: clients = [] } = useClients();
   const createSale = useCreateHelmetSale();
   const updateSale = useUpdateHelmetSale();
   const deleteSale = useDeleteHelmetSale();
@@ -45,6 +48,7 @@ export default function HelmetsPage() {
     nomPrenom: "",
     quantite: 1,
     montant: 0,
+    remarque: "",
   });
 
   const [purchaseForm, setPurchaseForm] = useState({
@@ -54,6 +58,7 @@ export default function HelmetsPage() {
     fournisseur: "",
     prix: 0,
   });
+  const [saleClientSelectValue, setSaleClientSelectValue] = useState<string>("");
 
   const slicedSales = useMemo(
     () => (selectedRowIndex !== null ? sales.slice(0, selectedRowIndex + 1) : sales),
@@ -86,7 +91,7 @@ export default function HelmetsPage() {
       }
       setSaleDialogOpen(false);
       setEditingSaleId(null);
-      setSaleForm({ numeroFacture: "", date: new Date().toISOString().split('T')[0], designation: "", typeClient: "B2C", nomPrenom: "", quantite: 1, montant: 0 });
+      setSaleForm({ numeroFacture: "", date: new Date().toISOString().split('T')[0], designation: "", typeClient: "B2C", nomPrenom: "", quantite: 1, montant: 0, remarque: "" });
     } catch (err: any) {
       toast({ title: "Erreur", description: err?.message || "Impossible d'enregistrer", variant: "destructive" });
     }
@@ -114,6 +119,7 @@ export default function HelmetsPage() {
       nomPrenom: item.nomPrenom,
       quantite: item.quantite ?? 1,
       montant: item.montant,
+      remarque: (item as { remarque?: string }).remarque ?? "",
     });
     setSaleDialogOpen(true);
   };
@@ -202,8 +208,48 @@ export default function HelmetsPage() {
                     </div>
                     <div className="grid gap-2"><Label className="font-bold text-gray-700 uppercase tracking-wider text-xs px-1">Quantité</Label><Input type="number" min="1" value={saleForm.quantite} onChange={e => setSaleForm({ ...saleForm, quantite: Number(e.target.value) })} required className="h-12 rounded-xl border-gray-200 font-medium" /></div>
                   </div>
-                  <div className="grid gap-2"><Label className="font-bold text-gray-700 uppercase tracking-wider text-xs px-1">Nom / Prénom</Label><Input value={saleForm.nomPrenom} onChange={e => setSaleForm({ ...saleForm, nomPrenom: e.target.value })} required className="h-12 rounded-xl border-gray-200 font-medium" /></div>
+                  <div className="grid gap-2">
+                    <Label className="font-bold text-gray-700 uppercase tracking-wider text-xs px-1">Nom / Prénom</Label>
+                    <Select
+                      value={saleClientSelectValue}
+                      onValueChange={(val) => {
+                        setSaleClientSelectValue(val);
+                        setSaleForm({ ...saleForm, nomPrenom: val });
+                      }}
+                    >
+                      <SelectTrigger className="h-12 rounded-xl border-gray-200 font-medium">
+                        <SelectValue placeholder="Choisir un client existant" />
+                      </SelectTrigger>
+                      <SelectContent className="rounded-xl border-none shadow-xl max-h-72">
+                        {clients.map((c) => (
+                          <SelectItem key={c.id} value={c.nomPrenom} className="rounded-lg font-medium">
+                            {c.nomPrenom}
+                            {c.numeroTelephone ? ` (${c.numeroTelephone})` : ""}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Input
+                      className="mt-2"
+                      placeholder="Ou saisir un nouveau client"
+                      value={saleForm.nomPrenom}
+                      onChange={(e) => {
+                        setSaleForm({ ...saleForm, nomPrenom: e.target.value });
+                        setSaleClientSelectValue("");
+                      }}
+                      required
+                    />
+                  </div>
                   <div className="grid gap-2"><Label className="font-bold text-gray-700 uppercase tracking-wider text-xs px-1">Montant (TND)</Label><Input type="number" step="0.001" value={saleForm.montant} onChange={e => setSaleForm({ ...saleForm, montant: Number(e.target.value) })} required className="h-12 rounded-xl border-gray-200 font-bold text-red-600" /></div>
+                  <div className="grid gap-2">
+                    <Label className="font-bold text-gray-700 uppercase tracking-wider text-xs px-1">Remarque</Label>
+                    <Textarea
+                      value={saleForm.remarque}
+                      onChange={e => setSaleForm({ ...saleForm, remarque: e.target.value })}
+                      className="min-h-[72px] rounded-xl border-gray-200 font-medium resize-none"
+                      placeholder="Ex: 40 + 40 + 70 / avance 40, reste 110"
+                    />
+                  </div>
                   <Button type="submit" className="w-full h-14 bg-gradient-to-r from-red-600 to-red-700 text-white font-black uppercase tracking-widest rounded-2xl shadow-lg mt-4">{editingSaleId ? "Mettre à jour" : "Confirmer la vente"}</Button>
                 </form>
               </DialogContent>
@@ -285,6 +331,7 @@ export default function HelmetsPage() {
                         <TableHead className="font-black text-gray-900 h-16 uppercase tracking-widest text-[10px]">Nom/Prénom</TableHead>
                         <TableHead className="font-black text-gray-900 h-16 uppercase tracking-widest text-[10px]">Qté</TableHead>
                         <TableHead className="font-black text-gray-900 h-16 uppercase tracking-widest text-[10px]">Montant</TableHead>
+                        <TableHead className="font-black text-gray-900 h-16 uppercase tracking-widest text-[10px]">Remarque</TableHead>
                         <TableHead className="text-right font-black text-gray-900 h-16 uppercase tracking-widest text-[10px]">Actions</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -308,6 +355,7 @@ export default function HelmetsPage() {
                           <TableCell className="py-4 font-medium text-gray-500">{item.nomPrenom}</TableCell>
                           <TableCell className="py-4 font-black">{item.quantite ?? 1}</TableCell>
                           <TableCell className="py-4 font-black text-red-600 italic tracking-tighter">{Number(item.montant).toFixed(2)} TND</TableCell>
+                          <TableCell className="py-4 text-gray-600 text-sm max-w-[160px] truncate" title={(item as { remarque?: string }).remarque ?? ""}>{(item as { remarque?: string }).remarque || "-"}</TableCell>
                           <TableCell className="text-right py-4" onClick={(e) => e.stopPropagation()}>
                             <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                               <Button variant="ghost" size="icon" onClick={() => handleEditSale(item)} className="h-10 w-10 rounded-xl text-gray-400 hover:text-gray-900 hover:bg-white shadow-sm transition-all"><Edit2 className="w-4 h-4" /></Button>

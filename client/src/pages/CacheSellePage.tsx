@@ -20,12 +20,14 @@ import {
   useSaddleStock,
   useUpdateSaddleSale,
 } from "@/hooks/use-saddles";
+import { useClients } from "@/hooks/use-clients";
 
 export default function CacheSellePage() {
   const { toast } = useToast();
   const { data: sales = [] } = useSaddleSales();
   const { data: purchases = [] } = useSaddlePurchases();
   const { data: stock } = useSaddleStock();
+  const { data: clients = [] } = useClients();
   const createSale = useCreateSaddleSale();
   const updateSale = useUpdateSaddleSale();
   const deleteSale = useDeleteSaddleSale();
@@ -53,6 +55,7 @@ export default function CacheSellePage() {
     fournisseur: "",
     prix: 0,
   });
+  const [saleClientSelectValue, setSaleClientSelectValue] = useState<string>("");
 
   const slicedSales = selectedRowIndex !== null ? sales.slice(0, selectedRowIndex + 1) : sales;
   const totalSoldXL = useMemo(() => slicedSales.reduce((acc, s) => acc + Number(s.tailleXl ?? 0), 0), [slicedSales]);
@@ -224,7 +227,34 @@ export default function CacheSellePage() {
                   </div>
                   <div className="grid gap-2">
                     <Label className="font-bold text-gray-700 uppercase tracking-wider text-xs px-1">Client</Label>
-                    <Input value={saleForm.client} onChange={e => setSaleForm({ ...saleForm, client: e.target.value })} className="h-12 rounded-xl border-gray-200 font-medium" placeholder="Optionnel" />
+                    <Select
+                      value={saleClientSelectValue}
+                      onValueChange={(val) => {
+                        setSaleClientSelectValue(val);
+                        setSaleForm({ ...saleForm, client: val });
+                      }}
+                    >
+                      <SelectTrigger className="h-12 rounded-xl border-gray-200 font-medium">
+                        <SelectValue placeholder="Choisir un client existant" />
+                      </SelectTrigger>
+                      <SelectContent className="rounded-xl border-none shadow-xl max-h-72">
+                        {clients.map((c) => (
+                          <SelectItem key={c.id} value={c.nomPrenom} className="rounded-lg font-medium">
+                            {c.nomPrenom}
+                            {c.numeroTelephone ? ` (${c.numeroTelephone})` : ""}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Input
+                      className="mt-2"
+                      placeholder="Ou saisir un nouveau client"
+                      value={saleForm.client}
+                      onChange={(e) => {
+                        setSaleForm({ ...saleForm, client: e.target.value });
+                        setSaleClientSelectValue("");
+                      }}
+                    />
                   </div>
                   <Button type="submit" className="w-full h-14 bg-gradient-to-r from-red-600 to-red-700 text-white font-black uppercase tracking-widest rounded-2xl shadow-lg mt-4">
                     {editingSaleId ? "Mettre à jour" : "Enregistrer"}

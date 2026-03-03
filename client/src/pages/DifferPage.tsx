@@ -19,6 +19,8 @@ import {
   useCreateDiversPurchase,
   useDeleteDiversPurchase,
 } from "@/hooks/use-deferred";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useClients } from "@/hooks/use-clients";
 
 export default function DifferPage() {
   const { toast } = useToast();
@@ -30,11 +32,13 @@ export default function DifferPage() {
   const deleteSale = useDeleteDeferredSale();
   const createPurchase = useCreateDiversPurchase();
   const deletePurchase = useDeleteDiversPurchase();
+  const { data: clients = [] } = useClients();
 
   const [isOpen, setIsOpen] = useState(false);
   const [purchaseDialogOpen, setPurchaseDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [selectedRowIndex, setSelectedRowIndex] = useState<number | null>(null);
+  const [clientSelectValue, setClientSelectValue] = useState<string>("");
 
   const [formData, setFormData] = useState({
     date: new Date().toISOString().split('T')[0],
@@ -182,7 +186,38 @@ export default function DifferPage() {
                 <DialogHeader><DialogTitle className="text-2xl font-black text-gray-900 uppercase italic tracking-tight">{editingId ? "Modifier" : "Nouvelle vente"}</DialogTitle></DialogHeader>
                 <form onSubmit={handleSubmit} className="flex flex-col gap-5 py-4">
                   <div className="grid gap-2"><Label className="font-bold text-gray-700 uppercase tracking-wider text-xs px-1">Date</Label><Input type="date" value={formData.date} onChange={e => setFormData({...formData, date: e.target.value})} required className="h-12 rounded-xl border-gray-200 font-medium" /></div>
-                  <div className="grid gap-2"><Label className="font-bold text-gray-700 uppercase tracking-wider text-xs px-1">Nom et Prénom</Label><Input value={formData.nomPrenom} onChange={e => setFormData({ ...formData, nomPrenom: e.target.value })} required className="h-12 rounded-xl border-gray-200 font-medium" /></div>
+                  <div className="grid gap-2">
+                    <Label className="font-bold text-gray-700 uppercase tracking-wider text-xs px-1">Nom et Prénom</Label>
+                    <Select
+                      value={clientSelectValue}
+                      onValueChange={(val) => {
+                        setClientSelectValue(val);
+                        setFormData({ ...formData, nomPrenom: val });
+                      }}
+                    >
+                      <SelectTrigger className="h-12 rounded-xl border-gray-200 font-medium">
+                        <SelectValue placeholder="Choisir un client existant" />
+                      </SelectTrigger>
+                      <SelectContent className="rounded-xl border-none shadow-xl max-h-72">
+                        {clients.map((c) => (
+                          <SelectItem key={c.id} value={c.nomPrenom} className="rounded-lg font-medium">
+                            {c.nomPrenom}
+                            {c.numeroTelephone ? ` (${c.numeroTelephone})` : ""}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Input
+                      className="mt-2"
+                      placeholder="Ou saisir un nouveau client"
+                      value={formData.nomPrenom}
+                      onChange={(e) => {
+                        setFormData({ ...formData, nomPrenom: e.target.value });
+                        setClientSelectValue("");
+                      }}
+                      required
+                    />
+                  </div>
                   <div className="grid gap-2"><Label className="font-bold text-gray-700 uppercase tracking-wider text-xs px-1">Téléphone</Label><Input value={formData.numeroTelephone} onChange={e => setFormData({ ...formData, numeroTelephone: e.target.value })} className="h-12 rounded-xl border-gray-200 font-medium" /></div>
                   <div className="grid gap-2"><Label className="font-bold text-gray-700 uppercase tracking-wider text-xs px-1">Type Moto</Label><Input value={formData.typeMoto} onChange={e => setFormData({ ...formData, typeMoto: e.target.value })} className="h-12 rounded-xl border-gray-200 font-medium" /></div>
                   <div className="grid gap-2"><Label className="font-bold text-gray-700 uppercase tracking-wider text-xs px-1">Désignation</Label><Input value={formData.designation} onChange={e => setFormData({...formData, designation: e.target.value})} required className="h-12 rounded-xl border-gray-200 font-medium" /></div>

@@ -2,27 +2,39 @@ import { db } from "./db";
 import { sales } from "@shared/schema";
 import { eq } from "drizzle-orm";
 
-// Month mapping from CSV to schema month keys
+// Month mapping from CSV to schema month keys (keys are lowercase)
 const CSV_MONTH_MAPPING: Record<string, string> = {
   "juillet 2025": "juillet_2025",
-  "Aout 2025": "aout_2025",
+  "aout 2025": "aout_2025",
   "septembre 2025": "septembre_2025",
   "octobre 2025": "octobre_2025",
   "novembre 2025": "novembre_2025",
-  "Dècembre 2025": "decembre_2025",
+  "decembre 2025": "decembre_2025",
   "janvier 2026": "janvier_2026",
-  "Fevrier 2026": "fevrier_2026",
+  "fevrier 2026": "fevrier_2026",
   "mars 2026": "mars_2026",
   "avril 2026": "avril_2026",
   "mai 2026": "mai_2026",
   "juin 2026": "juin_2026",
   "juillet 2026": "juillet_2026",
-  "Aout 2026": "aout_2026",
+  "aout 2026": "aout_2026",
   "septembre 2026": "septembre_2026",
   "octobre 2026": "octobre_2026",
   "novembre 2026": "novembre_2026",
-  "Dècembre 2026": "decembre_2026",
+  "decembre 2026": "decembre_2026",
   "janvier 2027": "janvier_2027",
+  "fevrier 2027": "fevrier_2027",
+  "mars 2027": "mars_2027",
+  "avril 2027": "avril_2027",
+  "mai 2027": "mai_2027",
+  "juin 2027": "juin_2027",
+  "juillet 2027": "juillet_2027",
+  "aout 2027": "aout_2027",
+  "septembre 2027": "septembre_2027",
+  "octobre 2027": "octobre_2027",
+  "novembre 2027": "novembre_2027",
+  "decembre 2027": "decembre_2027",
+  "janvier 2028": "janvier_2028",
 };
 
 // Status mapping from CSV to schema
@@ -53,8 +65,8 @@ function parseCSVRows(content: string): string[][] {
         // Toggle quote state
         inQuotes = !inQuotes;
       }
-    } else if (char === ',' && !inQuotes) {
-      // Field separator
+    } else if ((char === "," || char === ";") && !inQuotes) {
+      // Field separator (supports both comma- and semicolon-separated CSV)
       currentRow.push(currentField.trim());
       currentField = "";
     } else if ((char === '\n' || char === '\r') && !inQuotes) {
@@ -160,10 +172,11 @@ export async function importCSVFromBuffer(
   for (let i = 0; i < rows.length; i++) {
     const row = rows[i];
     const rowText = row.join(",");
-    if (rowText.includes("N° Facture") && rowText.includes("Date")) {
+    const rowLower = rowText.toLowerCase();
+    if (rowLower.includes("n° facture") && rowLower.includes("date")) {
       headerRowIndex = i;
     }
-    if (rowText.includes("AVANCE") && rowText.includes("juillet 2025")) {
+    if (rowLower.includes("avance") && rowLower.includes("juillet 2025")) {
       monthHeaderRowIndex = i;
     }
   }
@@ -182,8 +195,9 @@ export async function importCSVFromBuffer(
   // Build month column index mapping
   const monthColumnMap: Record<number, string> = {};
   for (let i = 0; i < monthColumns.length; i++) {
-    const monthName = monthColumns[i]?.trim();
-    if (monthName && monthName !== "AVANCE" && CSV_MONTH_MAPPING[monthName]) {
+    const raw = monthColumns[i]?.trim();
+    const monthName = raw?.toLowerCase();
+    if (monthName && !monthName.startsWith("avance") && CSV_MONTH_MAPPING[monthName]) {
       monthColumnMap[i] = CSV_MONTH_MAPPING[monthName];
     }
   }

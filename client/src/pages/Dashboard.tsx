@@ -2,7 +2,7 @@ import { SalesTable } from "@/components/SalesTable";
 import { CreateSaleDialog } from "@/components/CreateSaleDialog";
 import { NotificationsPanel } from "@/components/NotificationsPanel";
 import { ImportCSVDialog } from "@/components/ImportCSVDialog";
-import logoImg from "@assets/LOGOBranding_1771926796475.png";
+import logoImg from "@assets/LOGOBranding_1771926826080.png";
 import { useSales } from "@/hooks/use-sales";
 import { useHelmetSales } from "@/hooks/use-helmets";
 import { Bike, HardHat, Droplets, Shield, Split, LayoutDashboard, ShoppingCart, CalendarDays, Bell, LogOut, CircleUser, Menu, Users, Settings, Boxes, ShoppingBag } from "lucide-react";
@@ -17,7 +17,7 @@ export default function Dashboard({ children, contentOnly = false }: { children?
   const { data: sales = [] } = useSales();
   const { data: helmetSales = [] } = useHelmetSales();
 
-  const motoCount = sales.length;
+  const motoCount = sales.filter((s: any) => (s.chassisNumber ?? "").toString().trim() !== "").length;
   const helmetCount = helmetSales.reduce((acc, s) => acc + Number(s.quantite ?? 1), 0);
 
   return (

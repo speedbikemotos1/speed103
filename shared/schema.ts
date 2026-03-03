@@ -115,6 +115,8 @@ export const oilSales = sqliteTable("oil_sales", {
   date: text("date").notNull(), // YYYY-MM-DD
   huile10w40: integer("huile_10w40").default(0).notNull(),
   huile20w50: integer("huile_20w50").default(0).notNull(),
+  gearOil: integer("gear_oil").default(0),
+  brakeOil: integer("brake_oil").default(0),
   prix: real("prix").default(0).notNull(),
   encaissement: text("encaissement").notNull(),
   client: text("client").default("").notNull(),
@@ -136,6 +138,8 @@ export const oilPurchases = sqliteTable("oil_purchases", {
   date: text("date").notNull(), // YYYY-MM-DD
   huile10w40: integer("huile_10w40").default(0).notNull(),
   huile20w50: integer("huile_20w50").default(0).notNull(),
+  gearOil: integer("gear_oil").default(0),
+  brakeOil: integer("brake_oil").default(0),
   fournisseur: text("fournisseur").default("").notNull(),
   prix: real("prix").default(0).notNull(), // total purchase cost (optional usage)
   createdAt: integer("created_at", { mode: "timestamp_ms" }).default(
@@ -154,6 +158,8 @@ export type InsertOilPurchase = z.infer<typeof insertOilPurchaseSchema>;
 export const oilStockSchema = z.object({
   huile_10w40: z.number(),
   huile_20w50: z.number(),
+  gear_oil: z.number(),
+  break_oil: z.number(),
 });
 export type OilStock = z.infer<typeof oilStockSchema>;
 
@@ -170,6 +176,7 @@ export const helmetSales = sqliteTable("helmet_sales", {
   nomPrenom: text("nom_prenom").notNull(),
   quantite: integer("quantite").default(1).notNull(),
   montant: real("montant").default(0).notNull(),
+  remarque: text("remarque").default("").notNull(),
   createdAt: integer("created_at", { mode: "timestamp_ms" }).default(
     sql`(unixepoch() * 1000)`,
   ),

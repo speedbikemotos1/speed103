@@ -109,17 +109,21 @@ export interface IStorage {
 export class DatabaseStorage implements IStorage {
   private getOilStockWithExecutor(
     executor: typeof db | any,
-  ): { huile_10w40: number; huile_20w50: number } {
+  ): { huile_10w40: number; huile_20w50: number; gear_oil: number; break_oil: number } {
     const purchaseRows = executor
       .select({
         q10: sql<number>`coalesce(sum(${oilPurchases.huile10w40}), 0)`,
         q20: sql<number>`coalesce(sum(${oilPurchases.huile20w50}), 0)`,
+        qGear: sql<number>`coalesce(sum(${oilPurchases.gearOil}), 0)`,
+        qBrake: sql<number>`coalesce(sum(${oilPurchases.brakeOil}), 0)`,
       })
       .from(oilPurchases)
       .all?.() ?? executor
       .select({
         q10: sql<number>`coalesce(sum(${oilPurchases.huile10w40}), 0)`,
         q20: sql<number>`coalesce(sum(${oilPurchases.huile20w50}), 0)`,
+        qGear: sql<number>`coalesce(sum(${oilPurchases.gearOil}), 0)`,
+        qBrake: sql<number>`coalesce(sum(${oilPurchases.brakeOil}), 0)`,
       })
       .from(oilPurchases);
 
@@ -127,12 +131,16 @@ export class DatabaseStorage implements IStorage {
       .select({
         q10: sql<number>`coalesce(sum(${oilSales.huile10w40}), 0)`,
         q20: sql<number>`coalesce(sum(${oilSales.huile20w50}), 0)`,
+        qGear: sql<number>`coalesce(sum(${oilSales.gearOil}), 0)`,
+        qBrake: sql<number>`coalesce(sum(${oilSales.brakeOil}), 0)`,
       })
       .from(oilSales)
       .all?.() ?? executor
       .select({
         q10: sql<number>`coalesce(sum(${oilSales.huile10w40}), 0)`,
         q20: sql<number>`coalesce(sum(${oilSales.huile20w50}), 0)`,
+        qGear: sql<number>`coalesce(sum(${oilSales.gearOil}), 0)`,
+        qBrake: sql<number>`coalesce(sum(${oilSales.brakeOil}), 0)`,
       })
       .from(oilSales);
 
@@ -142,6 +150,8 @@ export class DatabaseStorage implements IStorage {
     return {
       huile_10w40: Number(p?.q10 ?? 0) - Number(s?.q10 ?? 0),
       huile_20w50: Number(p?.q20 ?? 0) - Number(s?.q20 ?? 0),
+      gear_oil: Number(p?.qGear ?? 0) - Number(s?.qGear ?? 0),
+      break_oil: Number(p?.qBrake ?? 0) - Number(s?.qBrake ?? 0),
     };
   }
 
@@ -268,7 +278,7 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(oilPurchases).orderBy(desc(oilPurchases.date), desc(oilPurchases.createdAt));
   }
 
-  async getOilStock(): Promise<{ huile_10w40: number; huile_20w50: number }> {
+  async getOilStock(): Promise<{ huile_10w40: number; huile_20w50: number; gear_oil: number; break_oil: number }> {
     return this.getOilStockWithExecutor(db);
   }
 
@@ -286,7 +296,14 @@ export class DatabaseStorage implements IStorage {
     const stock = this.getOilStockWithExecutor(db);
     const q10 = Number(sale.huile10w40 ?? 0);
     const q20 = Number(sale.huile20w50 ?? 0);
-    if (q10 > stock.huile_10w40 || q20 > stock.huile_20w50) {
+    const qGear = Number(sale.gearOil ?? 0);
+    const qBrake = Number(sale.brakeOil ?? 0);
+    if (
+      q10 > stock.huile_10w40 ||
+      q20 > stock.huile_20w50 ||
+      qGear > stock.gear_oil ||
+      qBrake > stock.break_oil
+    ) {
       const err: any = new Error("Stock insuffisant");
       err.status = 400;
       throw err;
@@ -630,7 +647,7 @@ export class DatabaseStorage implements IStorage {
   // -----------------
 
   async getClients(): Promise<Client[]> {
-    return await db.select().from(clients).orderBy(desc(clients.createdAt));
+    return await db.select().from(clients).orderBy(desc(clients.createdAt), desc(clients.id));
   }
 
   async createClient(client: InsertClient): Promise<Client> {

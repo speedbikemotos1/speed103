@@ -20,12 +20,14 @@ import {
   useOilStock,
   useUpdateOilSale,
 } from "@/hooks/use-oil";
+import { useClients } from "@/hooks/use-clients";
 
 export default function OilPage() {
   const { toast } = useToast();
   const { data: sales = [] } = useOilSales();
   const { data: purchases = [] } = useOilPurchases();
   const { data: stock } = useOilStock();
+  const { data: clients = [] } = useClients();
   const createSale = useCreateOilSale();
   const updateSale = useUpdateOilSale();
   const deleteSale = useDeleteOilSale();
@@ -41,6 +43,8 @@ export default function OilPage() {
     date: new Date().toISOString().split('T')[0],
     huile10w40: 0,
     huile20w50: 0,
+    gearOil: 0,
+    brakeOil: 0,
     prix: 0,
     encaissement: "KARIM",
     client: "",
@@ -50,9 +54,12 @@ export default function OilPage() {
     date: new Date().toISOString().split('T')[0],
     huile10w40: 0,
     huile20w50: 0,
+    gearOil: 0,
+    brakeOil: 0,
     fournisseur: "",
     prix: 0,
   });
+  const [saleClientSelectValue, setSaleClientSelectValue] = useState<string>("");
 
   const slicedSales = useMemo(
     () => (selectedRowIndex !== null ? sales.slice(0, selectedRowIndex + 1) : sales),
@@ -60,7 +67,15 @@ export default function OilPage() {
   );
 
   const totalSoldBidons = useMemo(() => {
-    return slicedSales.reduce((acc, s) => acc + Number(s.huile10w40) + Number(s.huile20w50), 0);
+    return slicedSales.reduce(
+      (acc, s) =>
+        acc +
+        Number(s.huile10w40) +
+        Number(s.huile20w50) +
+        Number((s as any).gearOil ?? 0) +
+        Number((s as any).brakeOil ?? 0),
+      0,
+    );
   }, [slicedSales]);
 
   const totalRevenue = useMemo(() => {
@@ -84,7 +99,16 @@ export default function OilPage() {
       }
       setSaleDialogOpen(false);
       setEditingSaleId(null);
-      setSaleForm({ date: new Date().toISOString().split('T')[0], huile10w40: 0, huile20w50: 0, prix: 0, encaissement: "KARIM", client: "" });
+      setSaleForm({
+        date: new Date().toISOString().split('T')[0],
+        huile10w40: 0,
+        huile20w50: 0,
+        gearOil: 0,
+        brakeOil: 0,
+        prix: 0,
+        encaissement: "KARIM",
+        client: "",
+      });
     } catch (err: any) {
       toast({ title: "Erreur", description: err?.message || "Impossible d'enregistrer la vente", variant: "destructive" });
     }
@@ -96,7 +120,15 @@ export default function OilPage() {
       await createPurchase.mutateAsync(purchaseForm);
       toast({ title: "Succès", description: "Achat ajouté (stock mis à jour)" });
       setPurchaseDialogOpen(false);
-      setPurchaseForm({ date: new Date().toISOString().split('T')[0], huile10w40: 0, huile20w50: 0, fournisseur: "", prix: 0 });
+      setPurchaseForm({
+        date: new Date().toISOString().split('T')[0],
+        huile10w40: 0,
+        huile20w50: 0,
+        gearOil: 0,
+        brakeOil: 0,
+        fournisseur: "",
+        prix: 0,
+      });
     } catch (err: any) {
       toast({ title: "Erreur", description: err?.message || "Impossible d'ajouter l'achat", variant: "destructive" });
     }
@@ -174,6 +206,16 @@ export default function OilPage() {
                       <Input type="number" min="0" value={purchaseForm.huile20w50} onChange={e => setPurchaseForm({ ...purchaseForm, huile20w50: Number(e.target.value) })} required className="h-12 rounded-xl border-gray-200 font-medium" />
                     </div>
                   </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="grid gap-2">
+                      <Label className="font-bold text-gray-700 uppercase tracking-wider text-xs px-1">Qte Gear Oil</Label>
+                      <Input type="number" min="0" value={purchaseForm.gearOil} onChange={e => setPurchaseForm({ ...purchaseForm, gearOil: Number(e.target.value) })} required className="h-12 rounded-xl border-gray-200 font-medium" />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label className="font-bold text-gray-700 uppercase tracking-wider text-xs px-1">Qte Brake Oil</Label>
+                      <Input type="number" min="0" value={purchaseForm.brakeOil} onChange={e => setPurchaseForm({ ...purchaseForm, brakeOil: Number(e.target.value) })} required className="h-12 rounded-xl border-gray-200 font-medium" />
+                    </div>
+                  </div>
                   <div className="grid gap-2">
                     <Label className="font-bold text-gray-700 uppercase tracking-wider text-xs px-1">Fournisseur</Label>
                     <Input value={purchaseForm.fournisseur} onChange={e => setPurchaseForm({ ...purchaseForm, fournisseur: e.target.value })} className="h-12 rounded-xl border-gray-200 font-medium" placeholder="Optionnel" />
@@ -216,6 +258,18 @@ export default function OilPage() {
                       <p className="text-[10px] font-bold text-muted-foreground px-1">Stock: {stock?.huile_20w50 ?? 0}</p>
                     </div>
                   </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="grid gap-2">
+                      <Label className="font-bold text-gray-700 uppercase tracking-wider text-xs px-1">Qte Gear Oil</Label>
+                      <Input type="number" min="0" value={saleForm.gearOil} onChange={e => setSaleForm({ ...saleForm, gearOil: Number(e.target.value) })} required className="h-12 rounded-xl border-gray-200 font-medium" />
+                      <p className="text-[10px] font-bold text-muted-foreground px-1">Stock: {stock?.gear_oil ?? 0}</p>
+                    </div>
+                    <div className="grid gap-2">
+                      <Label className="font-bold text-gray-700 uppercase tracking-wider text-xs px-1">Qte Brake Oil</Label>
+                      <Input type="number" min="0" value={saleForm.brakeOil} onChange={e => setSaleForm({ ...saleForm, brakeOil: Number(e.target.value) })} required className="h-12 rounded-xl border-gray-200 font-medium" />
+                      <p className="text-[10px] font-bold text-muted-foreground px-1">Stock: {stock?.break_oil ?? 0}</p>
+                    </div>
+                  </div>
                   <div className="grid gap-2">
                     <Label className="font-bold text-gray-700 uppercase tracking-wider text-xs px-1">Prix total (TND)</Label>
                     <Input type="number" min="0" step="0.001" value={saleForm.prix} onChange={e => setSaleForm({ ...saleForm, prix: Number(e.target.value) })} required className="h-12 rounded-xl border-gray-200 font-bold text-red-600" />
@@ -230,8 +284,35 @@ export default function OilPage() {
                     </Select>
                   </div>
                   <div className="grid gap-2">
-                    <Label className="font-bold text-gray-700 uppercase tracking-wider text-xs px-1">Nom du client</Label>
-                    <Input value={saleForm.client} onChange={e => setSaleForm({ ...saleForm, client: e.target.value })} className="h-12 rounded-xl border-gray-200 font-medium" placeholder="Optionnel" />
+                    <Label className="font-bold text-gray-700 uppercase tracking-wider text-xs px-1">Client</Label>
+                    <Select
+                      value={saleClientSelectValue}
+                      onValueChange={(val) => {
+                        setSaleClientSelectValue(val);
+                        setSaleForm({ ...saleForm, client: val });
+                      }}
+                    >
+                      <SelectTrigger className="h-12 rounded-xl border-gray-200 font-medium">
+                        <SelectValue placeholder="Choisir un client existant" />
+                      </SelectTrigger>
+                      <SelectContent className="rounded-xl border-none shadow-xl max-h-72">
+                        {clients.map((c) => (
+                          <SelectItem key={c.id} value={c.nomPrenom} className="rounded-lg font-medium">
+                            {c.nomPrenom}
+                            {c.numeroTelephone ? ` (${c.numeroTelephone})` : ""}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Input
+                      className="mt-2"
+                      placeholder="Ou saisir un nouveau client"
+                      value={saleForm.client}
+                      onChange={(e) => {
+                        setSaleForm({ ...saleForm, client: e.target.value });
+                        setSaleClientSelectValue("");
+                      }}
+                    />
                   </div>
                   <Button type="submit" className="w-full h-14 bg-gradient-to-r from-red-600 to-red-700 text-white font-black uppercase tracking-widest rounded-2xl shadow-lg mt-4">
                     {editingSaleId ? "Mettre à jour" : "Confirmer la vente"}
@@ -242,7 +323,7 @@ export default function OilPage() {
           </div>
         </header>
 
-        <div className="grid gap-6 md:grid-cols-4">
+        <div className="grid gap-6 md:grid-cols-4 lg:grid-cols-6">
           <Card className="bg-white/70 backdrop-blur-sm border-gray-200 shadow-sm hover:shadow-xl transition-all duration-300 rounded-3xl group">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-xs font-black text-gray-500 uppercase tracking-widest">Stock 10W40</CardTitle>
@@ -260,6 +341,26 @@ export default function OilPage() {
             </CardHeader>
             <CardContent>
               <div className="text-4xl font-black text-gray-900 tracking-tighter italic">{stock?.huile_20w50 ?? 0}</div>
+              <p className="text-[10px] font-bold text-gray-400 mt-2 uppercase">Bidons disponibles</p>
+            </CardContent>
+          </Card>
+          <Card className="bg-white/70 backdrop-blur-sm border-gray-200 shadow-sm hover:shadow-xl transition-all duration-300 rounded-3xl group">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-xs font-black text-gray-500 uppercase tracking-widest">Stock Gear Oil</CardTitle>
+              <div className="p-2 bg-amber-100 rounded-xl group-hover:bg-amber-200 transition-colors"><Droplet className="w-4 h-4 text-orange-600" /></div>
+            </CardHeader>
+            <CardContent>
+              <div className="text-4xl font-black text-gray-900 tracking-tighter italic">{stock?.gear_oil ?? 0}</div>
+              <p className="text-[10px] font-bold text-gray-400 mt-2 uppercase">Bidons disponibles</p>
+            </CardContent>
+          </Card>
+          <Card className="bg-white/70 backdrop-blur-sm border-gray-200 shadow-sm hover:shadow-xl transition-all duration-300 rounded-3xl group">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-xs font-black text-gray-500 uppercase tracking-widest">Stock Brake Oil</CardTitle>
+              <div className="p-2 bg-amber-100 rounded-xl group-hover:bg-amber-200 transition-colors"><Droplet className="w-4 h-4 text-orange-600" /></div>
+            </CardHeader>
+            <CardContent>
+              <div className="text-4xl font-black text-gray-900 tracking-tighter italic">{stock?.break_oil ?? 0}</div>
               <p className="text-[10px] font-bold text-gray-400 mt-2 uppercase">Bidons disponibles</p>
             </CardContent>
           </Card>

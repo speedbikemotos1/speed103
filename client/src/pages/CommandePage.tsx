@@ -6,9 +6,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Edit2, Trash2, ShoppingCart, DollarSign, TrendingUp } from "lucide-react";
 import Dashboard from "./Dashboard";
 import { useToast } from "@/hooks/use-toast";
+import { useClients } from "@/hooks/use-clients";
 
 interface Order {
   id: string;
@@ -27,6 +29,8 @@ export default function CommandePage() {
   const [isOpen, setIsOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const { toast } = useToast();
+  const { data: clients = [] } = useClients();
+  const [clientSelectValue, setClientSelectValue] = useState<string>("");
 
   const [formData, setFormData] = useState<Omit<Order, "id">>({
     nom_prenom: "",
@@ -116,7 +120,43 @@ export default function CommandePage() {
             <DialogContent className="rounded-[2rem] border-none shadow-2xl p-8">
               <DialogHeader><DialogTitle className="text-2xl font-black text-gray-900 uppercase italic tracking-tight">{editingId ? "Modifier la commande" : "Nouvelle commande"}</DialogTitle></DialogHeader>
               <form onSubmit={handleSubmit} className="flex flex-col gap-5 py-4">
-                <div className="grid gap-2"><Label className="font-bold text-gray-700 uppercase tracking-wider text-xs px-1">Nom / Prénom</Label><Input value={formData.nom_prenom} onChange={e => setFormData({...formData, nom_prenom: e.target.value})} required className="h-12 rounded-xl border-gray-200 font-medium" /></div>
+                <div className="grid gap-2">
+                  <Label className="font-bold text-gray-700 uppercase tracking-wider text-xs px-1">Nom / Prénom</Label>
+                  <Select
+                    value={clientSelectValue}
+                    onValueChange={(val) => {
+                      setClientSelectValue(val);
+                      const client = clients.find((c) => c.id.toString() === val);
+                      setFormData({
+                        ...formData,
+                        nom_prenom: client ? client.nomPrenom : formData.nom_prenom,
+                        numero_telephone: client?.numeroTelephone || formData.numero_telephone,
+                      });
+                    }}
+                  >
+                    <SelectTrigger className="h-12 rounded-xl border-gray-200 font-medium">
+                      <SelectValue placeholder="Choisir un client existant" />
+                    </SelectTrigger>
+                    <SelectContent className="rounded-xl border-none shadow-xl max-h-72">
+                      {clients.map((c) => (
+                        <SelectItem key={c.id} value={c.id.toString()} className="rounded-lg font-medium">
+                          {c.nomPrenom}
+                          {c.numeroTelephone ? ` (${c.numeroTelephone})` : ""}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Input
+                    className="mt-2"
+                    placeholder="Ou saisir un nouveau client"
+                    value={formData.nom_prenom}
+                    onChange={e => {
+                      setFormData({ ...formData, nom_prenom: e.target.value });
+                      setClientSelectValue("");
+                    }}
+                    required
+                  />
+                </div>
                 <div className="grid gap-2"><Label className="font-bold text-gray-700 uppercase tracking-wider text-xs px-1">Désignation</Label><Input value={formData.designation} onChange={e => setFormData({...formData, designation: e.target.value})} required className="h-12 rounded-xl border-gray-200 font-medium" /></div>
                 <div className="grid gap-2"><Label className="font-bold text-gray-700 uppercase tracking-wider text-xs px-1">Avance (TND)</Label><Input type="number" step="0.001" value={formData.avance} onChange={e => setFormData({...formData, avance: Number(e.target.value)})} required className="h-12 rounded-xl border-gray-200 font-bold text-red-600" /></div>
                 <div className="grid gap-2"><Label className="font-bold text-gray-700 uppercase tracking-wider text-xs px-1">Date</Label><Input type="date" value={formData.date} onChange={e => setFormData({...formData, date: e.target.value})} className="h-12 rounded-xl border-gray-200 font-medium" /></div>

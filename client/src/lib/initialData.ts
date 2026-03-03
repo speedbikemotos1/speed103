@@ -134,7 +134,11 @@ export const INITIAL_DATA = {
     { "id": "15", "nom_prenom": "Dhia", "designation": "Casque TNL Noir Taille XL", "avance": 50, "date": "2026-02-14", "numero": "93740271", "remarque": "visiére power noir +  support carénage avant power + lampe avant power" },
     { "id": "16", "nom_prenom": "Naoufel Barguaoui", "designation": "GHOST V7", "avance": 0, "date": "2026-02-25", "numero": "98400523", "remarque": "" },
     { "id": "17", "nom_prenom": "Med Slim ABID", "designation": "PISTA HR+ Carbone/Rouge", "avance": 0, "date": "2026-02-26", "numero": "22873434", "remarque": "" },
-    { "id": "18", "nom_prenom": "Nadhem", "designation": "GHOST V7", "avance": 0, "date": "2026-02-27", "numero": "23411873", "remarque": "" }
+    { "id": "18", "nom_prenom": "Nadhem", "designation": "GHOST V7", "avance": 0, "date": "2026-02-27", "numero": "23411873", "remarque": "" },
+    { "id": "19", "nom_prenom": "ALI", "designation": "Blaster", "avance": 0, "date": "2026-03-01", "numero": "24896154", "remarque": "pas d'exigence de couleur" },
+    { "id": "20", "nom_prenom": "unknow", "designation": "Blaster Rouge", "avance": 0, "date": "2026-03-01", "numero": "53304799", "remarque": "" },
+    { "id": "21", "nom_prenom": "lucky the real", "designation": "Blaster noir", "avance": 0, "date": "2026-03-01", "numero": "", "remarque": "tiktok" },
+    { "id": "22", "nom_prenom": "Rafik", "designation": "Blaster Rouge", "avance": 0, "date": "2026-03-01", "numero": "58380872", "remarque": "Monastir" }
   ],
   saddles: [
     { "id": "1", "date": "2025-09-01", "taille_xl": 1, "taille_xxl": 0, "prix": 15, "encaissement": "ANAS", "client": "Khmais" },

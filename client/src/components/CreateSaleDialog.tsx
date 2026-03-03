@@ -11,6 +11,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Plus, Calendar } from "lucide-react";
 import { z } from "zod";
+import { useClients } from "@/hooks/use-clients";
+import { useLocation } from "wouter";
 
 const formSchema = insertSaleSchema.extend({
   totalToPay: z.coerce.number(),
@@ -24,6 +26,9 @@ export function CreateSaleDialog() {
   const [open, setOpen] = useState(false);
   const { toast } = useToast();
   const createSale = useCreateSale();
+  const { data: clients = [] } = useClients();
+  const [clientSelectValue, setClientSelectValue] = useState<string>("");
+  const [, setLocation] = useLocation();
   
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -162,8 +167,52 @@ export function CreateSaleDialog() {
             </div>
 
             <div className="space-y-2">
-              <Label>Nom / Prénom</Label>
-              <Input {...form.register("clientName")} />
+              <Label>Nom / Prénom (client)</Label>
+              <div className="flex gap-2">
+                <div className="flex-1">
+                  <Select
+                    value={clientSelectValue}
+                    onValueChange={(val) => {
+                      setClientSelectValue(val);
+                      const client = clients.find((c) => c.id.toString() === val);
+                      form.setValue("clientName", client ? client.nomPrenom : "");
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Choisir un client existant" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {clients.map((c) => (
+                        <SelectItem key={c.id} value={c.id.toString()}>
+                          {c.nomPrenom}
+                          {c.numeroTelephone ? ` (${c.numeroTelephone})` : ""}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  className="shrink-0"
+                  onClick={() => {
+                    setOpen(false);
+                    setLocation("/gestion/clients");
+                  }}
+                >
+                  <Plus className="w-4 h-4" />
+                </Button>
+              </div>
+              <Input
+                className="mt-2"
+                placeholder="Ou saisir un nouveau client"
+                {...form.register("clientName")}
+                onChange={(e) => {
+                  form.setValue("clientName", e.target.value);
+                  setClientSelectValue("");
+                }}
+              />
             </div>
 
             {clientType === "Convention" && (
