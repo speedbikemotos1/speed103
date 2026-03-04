@@ -104,9 +104,99 @@ export interface IStorage {
   createClient(client: InsertClient): Promise<Client>;
   updateClient(id: number, updates: Partial<InsertClient>): Promise<Client>;
   deleteClient(id: number): Promise<void>;
+  // Products & Stock
+  getProductFamilies(): Promise<ProductFamily[]>;
+  createProductFamily(family: any): Promise<ProductFamily>;
+  getProducts(): Promise<Product[]>;
+  getProduct(id: number): Promise<Product | undefined>;
+  createProduct(product: any): Promise<Product>;
+  updateProduct(id: number, updates: Partial<Product>): Promise<Product>;
+  
+  // Purchases
+  getPurchaseReceipts(): Promise<PurchaseReceipt[]>;
+  getPurchaseReceipt(id: number): Promise<PurchaseReceipt | undefined>;
+  getPurchaseItems(receiptId: number): Promise<PurchaseItem[]>;
+  createPurchaseReceipt(receipt: any, items: any[]): Promise<PurchaseReceipt>;
+  validatePurchaseReceipt(id: number): Promise<PurchaseReceipt>;
 }
 
 export class DatabaseStorage implements IStorage {
+  // ... existing methods ...
+
+  async getProductFamilies(): Promise<ProductFamily[]> {
+    return await db.select().from(productFamilies).orderBy(productFamilies.name);
+  }
+
+  async createProductFamily(family: any): Promise<ProductFamily> {
+    const [newFamily] = await db.insert(productFamilies).values(family).returning();
+    return newFamily;
+  }
+
+  async getProducts(): Promise<Product[]> {
+    return await db.select().from(products).orderBy(products.designation);
+  }
+
+  async getProduct(id: number): Promise<Product | undefined> {
+    const [product] = await db.select().from(products).where(eq(products.id, id));
+    return product;
+  }
+
+  async createProduct(product: any): Promise<Product> {
+    const [newProduct] = await db.insert(products).values(product).returning();
+    return newProduct;
+  }
+
+  async updateProduct(id: number, updates: Partial<Product>): Promise<Product> {
+    const [updated] = await db.update(products).set(updates).where(eq(products.id, id)).returning();
+    return updated;
+  }
+
+  async getPurchaseReceipts(): Promise<PurchaseReceipt[]> {
+    return await db.select().from(purchaseReceipts).orderBy(desc(purchaseReceipts.date));
+  }
+
+  async getPurchaseReceipt(id: number): Promise<PurchaseReceipt | undefined> {
+    const [receipt] = await db.select().from(purchaseReceipts).where(eq(purchaseReceipts.id, id));
+    return receipt;
+  }
+
+  async getPurchaseItems(receiptId: number): Promise<PurchaseItem[]> {
+    return await db.select().from(purchaseItems).where(eq(purchaseItems.receiptId, receiptId));
+  }
+
+  async createPurchaseReceipt(receipt: any, items: any[]): Promise<PurchaseReceipt> {
+    return await db.transaction(async (tx) => {
+      const [newReceipt] = await tx.insert(purchaseReceipts).values(receipt).returning();
+      const itemsWithReceiptId = items.map(item => ({ ...item, receiptId: newReceipt.id }));
+      await tx.insert(purchaseItems).values(itemsWithReceiptId);
+      return newReceipt;
+    });
+  }
+
+  async validatePurchaseReceipt(id: number): Promise<PurchaseReceipt> {
+    return await db.transaction(async (tx) => {
+      const [receipt] = await tx.select().from(purchaseReceipts).where(eq(purchaseReceipts.id, id));
+      if (!receipt || receipt.isValidated) throw new Error("Invalid or already validated receipt");
+
+      const items = await tx.select().from(purchaseItems).where(eq(purchaseItems.receiptId, id));
+      
+      for (const item of items) {
+        const [product] = await tx.select().from(products).where(eq(products.id, item.productId));
+        if (product) {
+          await tx.update(products)
+            .set({ stockQuantity: product.stockQuantity + item.quantity })
+            .where(eq(products.id, item.productId));
+        }
+      }
+
+      const [updated] = await tx.update(purchaseReceipts)
+        .set({ isValidated: true })
+        .where(eq(purchaseReceipts.id, id))
+        .returning();
+      
+      return updated;
+    });
+  }
   private getOilStockWithExecutor(
     executor: typeof db | any,
   ): { huile_10w40: number; huile_20w50: number; gear_oil: number; break_oil: number } {

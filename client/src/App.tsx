@@ -65,6 +65,12 @@ function Router() {
       <Route path="/gestion/clients">
         {() => <ProtectedRoute component={GestionClientsPage} />}
       </Route>
+      <Route path="/stock">
+        {() => <ProtectedRoute component={ProtectedRouteWrapper(GestionStockPage)} />}
+      </Route>
+      <Route path="/achats">
+        {() => <ProtectedRoute component={ProtectedRouteWrapper(GestionAchatsPage)} />}
+      </Route>
       <Route path="/gestion/stock">
         {() => <ProtectedRoute component={GestionStockPage} />}
       </Route>

@@ -323,8 +323,73 @@ export type DeferredSale = typeof deferredSales.$inferSelect;
 export type InsertDeferredSale = z.infer<typeof insertDeferredSaleSchema>;
 
 // -----------------------------
-// Clients
+// Inventory & Products
 // -----------------------------
+
+export const productFamilies = sqliteTable("product_families", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  name: text("name").notNull().unique(),
+  createdAt: integer("created_at", { mode: "timestamp_ms" }).default(
+    sql`(unixepoch() * 1000)`,
+  ),
+});
+
+export const products = sqliteTable("products", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  reference: text("reference").notNull().unique(),
+  designation: text("designation").notNull(),
+  familyId: integer("family_id")
+    .notNull()
+    .references(() => productFamilies.id),
+  purchasePrice: real("purchase_price").notNull().default(0),
+  sellPrice: real("sell_price").notNull().default(0),
+  tva: real("tva").notNull().default(19),
+  stockQuantity: integer("stock_quantity").notNull().default(0),
+  minimumStock: integer("minimum_stock").notNull().default(0),
+  createdAt: integer("created_at", { mode: "timestamp_ms" }).default(
+    sql`(unixepoch() * 1000)`,
+  ),
+});
+
+export const purchaseReceipts = sqliteTable("purchase_receipts", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  bonNumber: text("bon_number").notNull().unique(),
+  date: text("date").notNull(),
+  supplier: text("supplier").notNull(),
+  totalHt: real("total_ht").notNull().default(0),
+  totalTva: real("total_tva").notNull().default(0),
+  totalTtc: real("total_ttc").notNull().default(0),
+  isValidated: integer("is_validated", { mode: "boolean" }).default(false),
+  createdAt: integer("created_at", { mode: "timestamp_ms" }).default(
+    sql`(unixepoch() * 1000)`,
+  ),
+});
+
+export const purchaseItems = sqliteTable("purchase_items", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  receiptId: integer("receipt_id")
+    .notNull()
+    .references(() => purchaseReceipts.id),
+  productId: integer("product_id")
+    .notNull()
+    .references(() => products.id),
+  reference: text("reference").notNull(),
+  designation: text("designation").notNull(),
+  quantity: integer("quantity").notNull(),
+  price: real("price").notNull(),
+  tva: real("tva").notNull().default(19),
+  discount: real("discount").notNull().default(0),
+});
+
+export const insertProductFamilySchema = createInsertSchema(productFamilies).omit({ id: true, createdAt: true });
+export const insertProductSchema = createInsertSchema(products).omit({ id: true, createdAt: true });
+export const insertPurchaseReceiptSchema = createInsertSchema(purchaseReceipts).omit({ id: true, createdAt: true });
+export const insertPurchaseItemSchema = createInsertSchema(purchaseItems).omit({ id: true });
+
+export type ProductFamily = typeof productFamilies.$inferSelect;
+export type Product = typeof products.$inferSelect;
+export type PurchaseReceipt = typeof purchaseReceipts.$inferSelect;
+export type PurchaseItem = typeof purchaseItems.$inferSelect;
 
 export const clients = sqliteTable("clients", {
   id: integer("id").primaryKey({ autoIncrement: true }),

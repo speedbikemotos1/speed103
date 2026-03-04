@@ -1,58 +1,149 @@
+import { useState } from "react";
 import Dashboard from "@/pages/Dashboard";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useOilStock } from "@/hooks/use-oil";
-import { useHelmetStock } from "@/hooks/use-helmets";
-import { Boxes } from "lucide-react";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Package, Plus, AlertTriangle } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import type { Product, ProductFamily } from "@shared/schema";
 
 export default function GestionStockPage() {
-  const { data: oilStock } = useOilStock();
-  const { data: helmetStock = [] } = useHelmetStock();
-  const totalHelmetStock = helmetStock.reduce((acc, r) => acc + Number(r.stock), 0);
+  const { toast } = useToast();
+  const [open, setOpen] = useState(false);
+  const [familyOpen, setFamilyOpen] = useState(false);
+
+  const { data: products = [] } = useQuery<Product[]>({ queryKey: ["/api/products"] });
+  const { data: families = [] } = useQuery<ProductFamily[]>({ queryKey: ["/api/product-families"] });
+
+  const createProduct = useMutation({
+    mutationFn: (data: any) => apiRequest("POST", "/api/products", data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/products"] });
+      setOpen(false);
+      toast({ title: "Produit créé" });
+    }
+  });
+
+  const createFamily = useMutation({
+    mutationFn: (data: any) => apiRequest("POST", "/api/product-families", data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/product-families"] });
+      setFamilyOpen(false);
+      toast({ title: "Famille créée" });
+    }
+  });
 
   return (
     <Dashboard contentOnly>
-      <div className="flex flex-col gap-8 p-8 max-w-7xl mx-auto bg-gradient-to-br from-gray-50 via-white to-gray-100 min-h-screen animate-enter">
-        <header className="flex items-center gap-4">
-          <div className="p-3 bg-gradient-to-br from-emerald-600 to-emerald-800 rounded-2xl shadow-lg ring-4 ring-white">
-            <Boxes className="w-8 h-8 text-white" />
+      <div className="p-8 max-w-7xl mx-auto flex flex-col gap-8">
+        <header className="flex justify-between items-center">
+          <div className="flex items-center gap-4">
+            <Package className="w-8 h-8" />
+            <h1 className="text-3xl font-black italic uppercase">Gestion Stock</h1>
           </div>
-          <div>
-            <h1 className="text-3xl font-black tracking-tight text-gray-900 uppercase italic">Gestion Stock</h1>
-            <p className="text-gray-500 font-medium">Vue rapide des stocks par module.</p>
+          <div className="flex gap-2">
+            <Dialog open={familyOpen} onOpenChange={setFamilyOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline">Nouvelle Famille</Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader><DialogTitle>Créer une famille</DialogTitle></DialogHeader>
+                <form onSubmit={(e) => {
+                  e.preventDefault();
+                  const fd = new FormData(e.currentTarget);
+                  createFamily.mutate({ name: fd.get("name") });
+                }} className="space-y-4">
+                  <div><Label>Nom</Label><Input name="name" required /></div>
+                  <Button type="submit" className="w-full">Enregistrer</Button>
+                </form>
+              </DialogContent>
+            </Dialog>
+
+            <Dialog open={open} onOpenChange={setOpen}>
+              <DialogTrigger asChild>
+                <Button className="bg-red-600 hover:bg-red-700">Nouveau Produit</Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader><DialogTitle>Créer un produit</DialogTitle></DialogHeader>
+                <form onSubmit={(e) => {
+                  e.preventDefault();
+                  const fd = new FormData(e.currentTarget);
+                  createProduct.mutate({
+                    reference: fd.get("reference"),
+                    designation: fd.get("designation"),
+                    familyId: parseInt(fd.get("familyId") as string),
+                    purchasePrice: parseFloat(fd.get("purchasePrice") as string),
+                    sellPrice: parseFloat(fd.get("sellPrice") as string),
+                    minimumStock: parseInt(fd.get("minimumStock") as string),
+                  });
+                }} className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div><Label>Référence</Label><Input name="reference" required /></div>
+                    <div><Label>Désignation</Label><Input name="designation" required /></div>
+                  </div>
+                  <div>
+                    <Label>Famille</Label>
+                    <Select name="familyId" required>
+                      <SelectTrigger><SelectValue placeholder="Choisir une famille" /></SelectTrigger>
+                      <SelectContent>
+                        {families.map(f => <SelectItem key={f.id} value={f.id.toString()}>{f.name}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div><Label>Prix Achat</Label><Input name="purchasePrice" type="number" step="0.01" required /></div>
+                    <div><Label>Prix Vente</Label><Input name="sellPrice" type="number" step="0.01" required /></div>
+                  </div>
+                  <div><Label>Stock Minimum</Label><Input name="minimumStock" type="number" required /></div>
+                  <Button type="submit" className="w-full">Enregistrer</Button>
+                </form>
+              </DialogContent>
+            </Dialog>
           </div>
         </header>
 
-        <div className="grid gap-6 md:grid-cols-3">
-          <Card className="bg-white/70 backdrop-blur-sm border-gray-200 shadow-sm hover:shadow-xl transition-all rounded-3xl">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-xs font-black text-gray-500 uppercase tracking-widest">Huile 10W40</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-4xl font-black text-gray-900 tracking-tighter italic">{oilStock?.huile_10w40 ?? 0}</div>
-              <p className="text-[10px] font-bold text-gray-400 mt-2 uppercase">Bidons</p>
-            </CardContent>
-          </Card>
-          <Card className="bg-white/70 backdrop-blur-sm border-gray-200 shadow-sm hover:shadow-xl transition-all rounded-3xl">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-xs font-black text-gray-500 uppercase tracking-widest">Huile 20W50</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-4xl font-black text-gray-900 tracking-tighter italic">{oilStock?.huile_20w50 ?? 0}</div>
-              <p className="text-[10px] font-bold text-gray-400 mt-2 uppercase">Bidons</p>
-            </CardContent>
-          </Card>
-          <Card className="bg-white/70 backdrop-blur-sm border-gray-200 shadow-sm hover:shadow-xl transition-all rounded-3xl">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-xs font-black text-gray-500 uppercase tracking-widest">Casques</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-4xl font-black text-gray-900 tracking-tighter italic">{totalHelmetStock}</div>
-              <p className="text-[10px] font-bold text-gray-400 mt-2 uppercase">Pièces</p>
-            </CardContent>
-          </Card>
-        </div>
+        <Card>
+          <CardHeader><CardTitle>Inventaire des produits</CardTitle></CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Référence</TableHead>
+                  <TableHead>Désignation</TableHead>
+                  <TableHead>Famille</TableHead>
+                  <TableHead className="text-right">Stock</TableHead>
+                  <TableHead className="text-right">Prix Vente</TableHead>
+                  <TableHead>Status</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {products.map(p => (
+                  <TableRow key={p.id}>
+                    <TableCell className="font-bold">{p.reference}</TableCell>
+                    <TableCell>{p.designation}</TableCell>
+                    <TableCell>{families.find(f => f.id === p.familyId)?.name}</TableCell>
+                    <TableCell className="text-right font-bold">{p.stockQuantity}</TableCell>
+                    <TableCell className="text-right">{p.sellPrice.toFixed(3)} DT</TableCell>
+                    <TableCell>
+                      {p.stockQuantity <= p.minimumStock && (
+                        <div className="flex items-center gap-1 text-red-600 font-bold text-xs uppercase">
+                          <AlertTriangle className="w-3 h-3" /> Stock Faible
+                        </div>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
       </div>
     </Dashboard>
   );
 }
-

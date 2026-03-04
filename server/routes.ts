@@ -515,6 +515,51 @@ export async function registerRoutes(
     res.status(204).send();
   });
 
+  // Products & Families
+  app.get("/api/product-families", isAuthenticated, async (_req, res) => {
+    const families = await storage.getProductFamilies();
+    res.json(families);
+  });
+
+  app.post("/api/product-families", isAuthenticated, async (req, res) => {
+    const family = await storage.createProductFamily(req.body);
+    res.status(201).json(family);
+  });
+
+  app.get("/api/products", isAuthenticated, async (_req, res) => {
+    const products = await storage.getProducts();
+    res.json(products);
+  });
+
+  app.post("/api/products", isAuthenticated, async (req, res) => {
+    const product = await storage.createProduct(req.body);
+    res.status(201).json(product);
+  });
+
+  // Purchases
+  app.get("/api/purchase-receipts", isAuthenticated, async (_req, res) => {
+    const receipts = await storage.getPurchaseReceipts();
+    res.json(receipts);
+  });
+
+  app.post("/api/purchase-receipts", isAuthenticated, async (req, res) => {
+    const { receipt, items } = req.body;
+    const newReceipt = await storage.createPurchaseReceipt(receipt, items);
+    res.status(201).json(newReceipt);
+  });
+
+  app.post("/api/purchase-receipts/:id/validate", isAuthenticated, async (req, res) => {
+    const id = parseInt(req.params.id);
+    const validated = await storage.validatePurchaseReceipt(id);
+    res.json(validated);
+  });
+
+  app.get("/api/purchase-receipts/:id/items", isAuthenticated, async (req, res) => {
+    const id = parseInt(req.params.id);
+    const items = await storage.getPurchaseItems(id);
+    res.json(items);
+  });
+
   // Seed Data
   await seedDatabase();
 
