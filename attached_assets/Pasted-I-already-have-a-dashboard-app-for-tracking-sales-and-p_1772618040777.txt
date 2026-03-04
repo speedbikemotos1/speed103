@@ -1,0 +1,143 @@
+I already have a dashboard app for tracking sales and payments.
+I have modules:
+
+gestion vente
+
+gestion achat
+
+gestion stock
+
+gestion client
+
+paramétrage
+
+I already finished gestion client with CRUD and it is linked to client dropdowns in other modules.
+
+Now I want to design Gestion Stock and Gestion Achat correctly.
+
+1️⃣ Gestion Stock – Product Structure
+
+I want to change stock from fixed cards (oil, helmets) to a dynamic system:
+
+Create Product Family (ex: Motos, Casques, Huiles, Accessoires)
+
+Create Product inside a family
+
+Product fields:
+
+id
+
+reference
+
+designation
+
+family_id
+
+purchase_price
+
+sell_price
+
+TVA
+
+stock_quantity
+
+minimum_stock
+
+Features:
+
+CRUD for product family
+
+CRUD for product
+
+Stock is calculated automatically
+
+Show stock per family and per product
+
+Low stock alert if stock_quantity < minimum_stock
+
+2️⃣ Gestion Achat – Bon de Réception
+
+I want to create a Bon de réception (Purchase Receipt) system.
+
+Bon de réception fields:
+
+bon_number
+
+date
+
+supplier
+
+total_ht
+
+total_tva
+
+total_ttc
+
+Bon de réception items:
+
+product_id
+
+reference
+
+designation
+
+quantity
+
+price
+
+TVA
+
+discount
+
+When I validate a bon de réception:
+
+Stock of each product must increase automatically
+
+Save bon and its lines in database
+
+Recalculate totals (HT, TVA, TTC)
+
+3️⃣ Example Data (motorcycles received)
+
+Example bon de réception:
+
+Fournisseur: K TRADING GLOBAL
+Date: 25/02/2026
+
+Products:
+
+014 | PISTA HR+ VERT MARRON 124 cc | Qte:1 | Prix:3715.17 | TVA:19% | Remise:5
+
+015 | PISTA HR+ NOIR ROUGE 124 cc | Qte:2 | Prix:3715.17 | TVA:19% | Remise:5
+
+020 | PISTA HR+ BLEU BEIGE 124 cc | Qte:2 | Prix:3715.17 | TVA:19% | Remise:5
+
+021 | PISTA HR+ ROUGE NOIRE 124 cc | Qte:1 | Prix:3715.17 | TVA:19% | Remise:5
+
+022 | PISTA HR+ CARBONE ROUGE 124 cc | Qte:1 | Prix:3715.17 | TVA:19% | Remise:5
+
+Total HT: 24705.884
+Total TVA: 4694.118
+Total TTC: 29400.002
+
+4️⃣ I want you to:
+
+Propose database sqlite as the existing db
+
+Propose UI structure (forms + tables)
+
+Implement stock update logic
+
+Implement bon de réception logic
+
+Keep architecture clean and modular
+
+Generate:
+
+Data models
+
+Stock logic
+
+Bon de réception logic
+
+Example code for create bon and update stock
