@@ -560,6 +560,53 @@ export async function registerRoutes(
     res.json(items);
   });
 
+  // --- Vente ---
+
+  // Devis
+  app.get("/api/devis", isAuthenticated, async (_req, res) => {
+    res.json(await storage.getDevis());
+  });
+
+  app.get("/api/devis/:id", isAuthenticated, async (req, res) => {
+    res.json(await storage.getDevisWithLines(parseInt(req.params.id)));
+  });
+
+  app.post("/api/devis", isAuthenticated, async (req, res) => {
+    const { data, lines } = req.body;
+    res.status(201).json(await storage.createDevis(data, lines));
+  });
+
+  app.post("/api/devis/:id/convert-to-bl", isAuthenticated, async (req, res) => {
+    res.json(await storage.convertDevisToBl(parseInt(req.params.id), req.body));
+  });
+
+  // Bons Livraison
+  app.get("/api/bl", isAuthenticated, async (_req, res) => {
+    res.json(await storage.getBonsLivraison());
+  });
+
+  app.get("/api/bl/:id", isAuthenticated, async (req, res) => {
+    res.json(await storage.getBlWithLines(parseInt(req.params.id)));
+  });
+
+  app.post("/api/bl", isAuthenticated, async (req, res) => {
+    const { data, lines } = req.body;
+    res.status(201).json(await storage.createBl(data, lines));
+  });
+
+  app.post("/api/bl/:id/validate", isAuthenticated, async (req, res) => {
+    res.json(await storage.validateBl(parseInt(req.params.id)));
+  });
+
+  // Factures
+  app.get("/api/factures", isAuthenticated, async (_req, res) => {
+    res.json(await storage.getFactures());
+  });
+
+  app.post("/api/bl/:id/create-facture", isAuthenticated, async (req, res) => {
+    res.status(201).json(await storage.createFactureFromBl(parseInt(req.params.id), req.body));
+  });
+
   // Seed Data
   await seedDatabase();
 

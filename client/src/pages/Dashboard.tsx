@@ -5,7 +5,7 @@ import { ImportCSVDialog } from "@/components/ImportCSVDialog";
 import logoImg from "@assets/LOGOBranding_1771926826080.png";
 import { useSales } from "@/hooks/use-sales";
 import { useHelmetSales } from "@/hooks/use-helmets";
-import { Bike, HardHat, Droplets, Shield, Split, LayoutDashboard, ShoppingCart, CalendarDays, Bell, LogOut, CircleUser, Menu, Users, Settings, Boxes, ShoppingBag } from "lucide-react";
+import { Bike, HardHat, Droplets, Shield, Split, LayoutDashboard, ShoppingCart, CalendarDays, Bell, LogOut, CircleUser, Menu, Users, Settings, Boxes, ShoppingBag, FileText } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
@@ -42,7 +42,12 @@ export default function Dashboard({ children, contentOnly = false }: { children?
                    <nav className="p-4 flex flex-col gap-2">
                      <SheetClose asChild>
                        <Button variant="ghost" className="justify-start gap-2 rounded-xl" onClick={() => setLocation("/")}>
-                         <LayoutDashboard className="h-4 w-4" /> Gestion vente
+                         <LayoutDashboard className="h-4 w-4" /> Dashboard
+                       </Button>
+                     </SheetClose>
+                     <SheetClose asChild>
+                       <Button variant="ghost" className="justify-start gap-2 rounded-xl" onClick={() => setLocation("/gestion/vente")}>
+                         <FileText className="h-4 w-4" /> Gestion vente
                        </Button>
                      </SheetClose>
                      <SheetClose asChild>
@@ -81,6 +86,9 @@ export default function Dashboard({ children, contentOnly = false }: { children?
 
           <nav className="hidden lg:flex items-center bg-muted/50 p-1 rounded-xl border gap-0.5">
             <NavLink href="/" icon={<LayoutDashboard className="w-3.5 h-3.5" />} label="Dash" active={location === '/'} />
+            <NavLink href="/gestion/vente" icon={<FileText className="w-3.5 h-3.5" />} label="Vente" active={location === '/gestion/vente'} />
+            <NavLink href="/gestion/achats" icon={<ShoppingBag className="w-3.5 h-3.5" />} label="Achats" active={location === '/gestion/achats'} />
+            <NavLink href="/gestion/stock" icon={<Boxes className="w-3.5 h-3.5" />} label="Stock" active={location === '/gestion/stock'} />
             <NavLink href="/oil" icon={<Droplets className="w-3.5 h-3.5" />} label="Huile" active={location === '/oil'} />
             <NavLink href="/helmets" icon={<Shield className="w-3.5 h-3.5" />} label="Casques" active={location === '/helmets'} />
             <NavLink href="/cache-selle" icon={<CircleUser className="w-3.5 h-3.5" />} label="Selle" active={location === '/cache-selle'} />
@@ -114,7 +122,7 @@ export default function Dashboard({ children, contentOnly = false }: { children?
 
       {/* Main Content */}
       <main className="flex-1 overflow-y-auto p-2 sm:p-4 min-h-0">
-        {contentOnly ? children : <SalesTable />}
+        {contentOnly ? children : (location === "/" ? <SalesTable /> : children)}
       </main>
       
       {/* Simple Footer */}

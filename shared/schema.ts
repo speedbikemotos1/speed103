@@ -391,6 +391,114 @@ export type Product = typeof products.$inferSelect;
 export type PurchaseReceipt = typeof purchaseReceipts.$inferSelect;
 export type PurchaseItem = typeof purchaseItems.$inferSelect;
 
+// -----------------------------
+// Sales Module (Vente)
+// -----------------------------
+
+export const devis = sqliteTable("devis", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  devisNumber: text("devis_number").notNull().unique(),
+  date: text("date").notNull(),
+  clientId: integer("client_id")
+    .notNull()
+    .references(() => clients.id),
+  commercial: text("commercial"),
+  totalHt: real("total_ht").notNull().default(0),
+  totalTva: real("total_tva").notNull().default(0),
+  totalTtc: real("total_ttc").notNull().default(0),
+  status: text("status").notNull().default("En attente"), // En attente, Converti, Annulé
+  createdAt: integer("created_at", { mode: "timestamp_ms" }).default(
+    sql`(unixepoch() * 1000)`,
+  ),
+});
+
+export const devisLines = sqliteTable("devis_lines", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  devisId: integer("devis_id")
+    .notNull()
+    .references(() => devis.id),
+  productId: integer("product_id")
+    .notNull()
+    .references(() => products.id),
+  reference: text("reference").notNull(),
+  designation: text("designation").notNull(),
+  quantity: integer("quantity").notNull(),
+  unitPrice: real("unit_price").notNull(),
+  tva: real("tva").notNull().default(19),
+  discount: real("discount").notNull().default(0),
+});
+
+export const bonLivraison = sqliteTable("bon_livraison", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  blNumber: text("bl_number").notNull().unique(),
+  date: text("date").notNull(),
+  clientId: integer("client_id")
+    .notNull()
+    .references(() => clients.id),
+  commercial: text("commercial"),
+  devisId: integer("devis_id").references(() => devis.id),
+  factureId: integer("facture_id"), 
+  totalHt: real("total_ht").notNull().default(0),
+  totalTva: real("total_tva").notNull().default(0),
+  totalTtc: real("total_ttc").notNull().default(0),
+  exonereTva: integer("exonere_tva", { mode: "boolean" }).default(false),
+  isValidated: integer("is_validated", { mode: "boolean" }).default(false),
+  status: text("status").notNull().default("Brouillon"), // Brouillon, Validé, Facturé
+  createdAt: integer("created_at", { mode: "timestamp_ms" }).default(
+    sql`(unixepoch() * 1000)`,
+  ),
+});
+
+export const blLines = sqliteTable("bl_lines", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  blId: integer("bl_id")
+    .notNull()
+    .references(() => bonLivraison.id),
+  productId: integer("product_id")
+    .notNull()
+    .references(() => products.id),
+  reference: text("reference").notNull(),
+  designation: text("designation").notNull(),
+  quantity: integer("quantity").notNull(),
+  unitPrice: real("unit_price").notNull(),
+  tva: real("tva").notNull().default(19),
+  discount: real("discount").notNull().default(0),
+  serialNumber: text("serial_number"),
+});
+
+export const factures = sqliteTable("factures", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  factureNumber: text("facture_number").notNull().unique(),
+  date: text("date").notNull(),
+  clientId: integer("client_id")
+    .notNull()
+    .references(() => clients.id),
+  commercial: text("commercial"),
+  blId: integer("bl_id")
+    .notNull()
+    .references(() => bonLivraison.id),
+  totalHt: real("total_ht").notNull().default(0),
+  fodec: real("fodec").notNull().default(0),
+  totalTva: real("total_tva").notNull().default(0),
+  timbreFiscal: real("timbre_fiscal").notNull().default(1),
+  totalNet: real("total_net").notNull().default(0),
+  createdAt: integer("created_at", { mode: "timestamp_ms" }).default(
+    sql`(unixepoch() * 1000)`,
+  ),
+});
+
+export const insertDevisSchema = createInsertSchema(devis).omit({ id: true, createdAt: true });
+export const insertDevisLineSchema = createInsertSchema(devisLines).omit({ id: true });
+export const insertBlSchema = createInsertSchema(bonLivraison).omit({ id: true, createdAt: true });
+export const insertBlLineSchema = createInsertSchema(blLines).omit({ id: true });
+export const insertFactureSchema = createInsertSchema(factures).omit({ id: true, createdAt: true });
+
+export type Devis = typeof devis.$inferSelect;
+export type DevisLine = typeof devisLines.$inferSelect;
+export type BonLivraison = typeof bonLivraison.$inferSelect;
+export type BlLine = typeof blLines.$inferSelect;
+export type Facture = typeof factures.$inferSelect;
+
 export const clients = sqliteTable("clients", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   uniqueNumber: integer("unique_number"),

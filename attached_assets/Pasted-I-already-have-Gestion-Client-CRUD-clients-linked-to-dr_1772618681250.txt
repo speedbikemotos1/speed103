@@ -1,0 +1,283 @@
+I already have:
+
+Gestion Client (CRUD clients, linked to dropdowns)
+
+Gestion Stock with:
+
+Product Family
+
+Product
+
+stock_quantity
+
+Gestion Achat with:
+
+Bon de réception
+
+Stock is increased automatically when a bon de réception is validated
+
+Now I want to implement Gestion Vente connected to the SAME products and stock.
+
+Gestion Vente must include:
+
+Offre de prix (Devis)
+
+Bon de livraison (BL)
+
+Facture
+
+All sales documents must use:
+
+Products from gestion stock
+
+Clients from gestion client
+
+Stock logic from gestion stock
+
+1️⃣ OFFRE DE PRIX (DEVIS)
+
+Fields:
+
+devis_number
+
+date
+
+client_id
+
+commercial
+
+total_ht
+
+total_tva
+
+total_ttc
+
+Devis lines:
+
+product_id (from stock table)
+
+reference
+
+designation
+
+quantity
+
+unit_price
+
+TVA
+
+discount
+
+Features:
+
+CRUD devis
+
+Select product from gestion stock
+
+Auto-fill reference & designation
+
+Auto-calculate totals (HT, TVA, TTC)
+
+A devis can be converted into a bon de livraison
+
+A devis does NOT change stock
+
+2️⃣ BON DE LIVRAISON (BL)
+
+Fields:
+
+bl_number
+
+date
+
+client_id
+
+commercial
+
+devis_id (optional)
+
+facture_id (optional)
+
+total_ht
+
+total_tva
+
+total_ttc
+
+exonere_tva (boolean)
+
+BL lines:
+
+product_id
+
+reference
+
+designation
+
+quantity
+
+unit_price
+
+TVA
+
+discount
+
+serial_number (S/N optional)
+
+Business rules:
+
+BL is created from:
+
+a devis OR manually
+
+When BL is validated:
+
+stock_quantity of each product is DECREASED
+
+prevent validation if stock_quantity < quantity
+
+Save BL and BL lines
+
+3️⃣ FACTURE
+
+Fields:
+
+facture_number
+
+date
+
+client_id
+
+commercial
+
+bl_id
+
+total_ht
+
+fodec_1_percent
+
+total_tva
+
+timbre_fiscal (default = 1)
+
+total_net
+
+Facture logic:
+
+Facture is generated ONLY from a bon de livraison
+
+Products come from BL
+
+total_net = total_ttc + timbre_fiscal
+
+If exonere_tva = true → TVA = 0
+
+4️⃣ Example Workflow (REAL CASE)
+
+Bon de réception (already done in achat):
+
+Adds motorcycles into stock
+
+Then sale:
+
+Devis:
+
+Client: Anouar ABDALLAH
+
+Product: SPRING ST 124CC BLEU FONCE
+
+Quantity: 1
+
+Price: 3445
+
+TVA: 19%
+
+Discount: 0
+
+Totals:
+
+HT: 3445
+
+TVA: 654.55
+
+TTC: 4099.55
+
+BL:
+
+Same product
+
+Serial number: LYFXCJL02R7000751
+
+Stock decreases by 1
+
+Facture:
+
+TTC: 4099.55
+
+Timbre fiscal: 1
+
+Net à payer: 4100.55
+
+5️⃣ DATA MODEL REQUIREMENTS
+
+Tables:
+
+devis
+
+devis_lines
+
+bon_livraison
+
+bl_lines
+
+facture
+
+facture_lines
+
+Relations:
+
+product.id → devis_lines.product_id
+
+product.id → bl_lines.product_id
+
+product.id → facture_lines.product_id
+
+devis.id → bon_livraison.devis_id
+
+bon_livraison.id → facture.bl_id
+
+6️⃣ I WANT YOU TO GENERATE:
+
+Database schema (use sqlite as existing)
+
+Relations between achat → stock → vente
+
+Business logic for:
+
+create devis
+
+convert devis → BL
+
+convert BL → facture
+
+update stock
+
+Validation rules (no negative stock)
+
+Total calculation logic (HT, TVA, TTC, Net)
+
+Keep architecture:
+
+Modular
+
+Reusable
+
+Compatible with existing gestion stock and gestion achat
+
+❌ Do NOT break:
+
+gestion stock
+
+gestion achat
+
+gestion client

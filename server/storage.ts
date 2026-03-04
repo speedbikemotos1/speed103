@@ -37,6 +37,24 @@ import {
   clients,
   type InsertClient,
   type Client,
+  productFamilies,
+  products,
+  purchaseReceipts,
+  purchaseItems,
+  type ProductFamily,
+  type Product,
+  type PurchaseReceipt,
+  type PurchaseItem,
+  devis,
+  devisLines,
+  bonLivraison,
+  blLines,
+  factures,
+  type Devis,
+  type DevisLine,
+  type BonLivraison,
+  type BlLine,
+  type Facture,
 } from "@shared/schema";
 import { eq, desc, and, sql } from "drizzle-orm";
 import { notifications } from "@shared/schema";
@@ -118,6 +136,20 @@ export interface IStorage {
   getPurchaseItems(receiptId: number): Promise<PurchaseItem[]>;
   createPurchaseReceipt(receipt: any, items: any[]): Promise<PurchaseReceipt>;
   validatePurchaseReceipt(id: number): Promise<PurchaseReceipt>;
+
+  // Vente
+  getDevis(): Promise<Devis[]>;
+  getDevisWithLines(id: number): Promise<{ devis: Devis; lines: DevisLine[] }>;
+  createDevis(data: any, lines: any[]): Promise<Devis>;
+  convertDevisToBl(devisId: number, blData: any): Promise<BonLivraison>;
+  
+  getBonsLivraison(): Promise<BonLivraison[]>;
+  getBlWithLines(id: number): Promise<{ bl: BonLivraison; lines: BlLine[] }>;
+  createBl(data: any, lines: any[]): Promise<BonLivraison>;
+  validateBl(id: number): Promise<BonLivraison>;
+  
+  getFactures(): Promise<Facture[]>;
+  createFactureFromBl(blId: number, factureData: any): Promise<Facture>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -195,6 +227,131 @@ export class DatabaseStorage implements IStorage {
         .returning();
       
       return updated;
+    });
+  }
+
+  // --- Sales (Vente) ---
+
+  async getDevis(): Promise<Devis[]> {
+    return await db.select().from(devis).orderBy(desc(devis.createdAt));
+  }
+
+  async getDevisWithLines(id: number): Promise<{ devis: Devis; lines: DevisLine[] }> {
+    const [d] = await db.select().from(devis).where(eq(devis.id, id));
+    if (!d) throw new Error("Devis not found");
+    const lines = await db.select().from(devisLines).where(eq(devisLines.devisId, id));
+    return { devis: d, lines };
+  }
+
+  async createDevis(data: any, lines: any[]): Promise<Devis> {
+    return await db.transaction(async (tx) => {
+      const [newDevis] = await tx.insert(devis).values(data).returning();
+      const linesWithId = lines.map(l => ({ ...l, devisId: newDevis.id }));
+      await tx.insert(devisLines).values(linesWithId);
+      return newDevis;
+    });
+  }
+
+  async convertDevisToBl(devisId: number, blData: any): Promise<BonLivraison> {
+    return await db.transaction(async (tx) => {
+      const { devis: d, lines } = await this.getDevisWithLines(devisId);
+      if (d.status === "Converti") throw new Error("Devis already converted");
+
+      const [newBl] = await tx.insert(bonLivraison).values({
+        ...blData,
+        devisId: d.id,
+        clientId: d.clientId,
+        totalHt: d.totalHt,
+        totalTva: d.totalTva,
+        totalTtc: d.totalTtc,
+      }).returning();
+
+      const blLinesData = lines.map(l => ({
+        blId: newBl.id,
+        productId: l.productId,
+        reference: l.reference,
+        designation: l.designation,
+        quantity: l.quantity,
+        unitPrice: l.unitPrice,
+        tva: l.tva,
+        discount: l.discount,
+      }));
+      await tx.insert(blLines).values(blLinesData);
+
+      await tx.update(devis).set({ status: "Converti" }).where(eq(devis.id, devisId));
+      return newBl;
+    });
+  }
+
+  async getBonsLivraison(): Promise<BonLivraison[]> {
+    return await db.select().from(bonLivraison).orderBy(desc(bonLivraison.createdAt));
+  }
+
+  async getBlWithLines(id: number): Promise<{ bl: BonLivraison; lines: BlLine[] }> {
+    const [bl] = await db.select().from(bonLivraison).where(eq(bonLivraison.id, id));
+    if (!bl) throw new Error("BL not found");
+    const lines = await db.select().from(blLines).where(eq(blLines.blId, id));
+    return { bl, lines };
+  }
+
+  async createBl(data: any, lines: any[]): Promise<BonLivraison> {
+    return await db.transaction(async (tx) => {
+      const [newBl] = await tx.insert(bonLivraison).values(data).returning();
+      const linesWithId = lines.map(l => ({ ...l, blId: newBl.id }));
+      await tx.insert(blLines).values(linesWithId);
+      return newBl;
+    });
+  }
+
+  async validateBl(id: number): Promise<BonLivraison> {
+    return await db.transaction(async (tx) => {
+      const { bl, lines } = await this.getBlWithLines(id);
+      if (bl.isValidated) throw new Error("BL already validated");
+
+      for (const line of lines) {
+        const [prod] = await tx.select().from(products).where(eq(products.id, line.productId));
+        if (!prod) throw new Error(`Produit non trouvé: ${line.reference}`);
+        
+        if (prod.stockQuantity < line.quantity) {
+          throw new Error(`Stock insuffisant pour ${line.reference} (Disponible: ${prod.stockQuantity}, Demandé: ${line.quantity})`);
+        }
+        
+        await tx.update(products)
+          .set({ stockQuantity: prod.stockQuantity - line.quantity })
+          .where(eq(products.id, line.productId));
+      }
+
+      const [updated] = await tx.update(bonLivraison)
+        .set({ isValidated: true, status: "Validé" })
+        .where(eq(bonLivraison.id, id))
+        .returning();
+      return updated;
+    });
+  }
+
+  async getFactures(): Promise<Facture[]> {
+    return await db.select().from(factures).orderBy(desc(factures.createdAt));
+  }
+
+  async createFactureFromBl(blId: number, factureData: any): Promise<Facture> {
+    return await db.transaction(async (tx) => {
+      const { bl } = await this.getBlWithLines(blId);
+      if (!bl.isValidated) throw new Error("BL must be validated first");
+      if (bl.factureId) throw new Error("BL already invoiced");
+
+      const [newFacture] = await tx.insert(factures).values({
+        ...factureData,
+        blId: bl.id,
+        clientId: bl.clientId,
+        totalHt: bl.totalHt,
+        totalTva: bl.exonereTva ? 0 : bl.totalTva,
+      }).returning();
+
+      await tx.update(bonLivraison)
+        .set({ factureId: newFacture.id, status: "Facturé" })
+        .where(eq(bonLivraison.id, blId));
+
+      return newFacture;
     });
   }
   private getOilStockWithExecutor(

@@ -15,6 +15,7 @@ import LoginPage from "@/pages/LoginPage";
 import GestionClientsPage from "@/pages/GestionClientsPage";
 import GestionStockPage from "@/pages/GestionStockPage";
 import GestionAchatsPage from "@/pages/GestionAchatsPage";
+import GestionVentePage from "@/pages/GestionVentePage";
 import ParametragePage from "@/pages/ParametragePage";
 import { AuthProvider, useAuth } from "@/hooks/use-auth";
 import { Loader2 } from "lucide-react";
@@ -65,17 +66,14 @@ function Router() {
       <Route path="/gestion/clients">
         {() => <ProtectedRoute component={GestionClientsPage} />}
       </Route>
-      <Route path="/stock">
-        {() => <ProtectedRoute component={ProtectedRouteWrapper(GestionStockPage)} />}
-      </Route>
-      <Route path="/achats">
-        {() => <ProtectedRoute component={ProtectedRouteWrapper(GestionAchatsPage)} />}
-      </Route>
       <Route path="/gestion/stock">
         {() => <ProtectedRoute component={GestionStockPage} />}
       </Route>
       <Route path="/gestion/achats">
         {() => <ProtectedRoute component={GestionAchatsPage} />}
+      </Route>
+      <Route path="/gestion/vente">
+        {() => <ProtectedRoute component={GestionVentePage} />}
       </Route>
       <Route path="/gestion/parametrage">
         {() => <ProtectedRoute component={ParametragePage} />}
